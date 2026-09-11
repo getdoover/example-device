@@ -1,0 +1,303 @@
+[
+  {
+    "timestamp": -5875200000,
+    "kind": "message",
+    "id": "event-1-start_event-rpc",
+    "data": {
+      "type": "rpc",
+      "app_key": "vega_level_sensor",
+      "method": "start_event",
+      "request": -5875200000,
+      "status": {
+        "code": "success",
+        "message": null
+      },
+      "response": {
+        "recorded": true
+      }
+    },
+    "timestamp_fields": [
+      {
+        "path": [
+          "request"
+        ],
+        "unit": "ms"
+      }
+    ]
+  },
+  {
+    "timestamp": -5875200000,
+    "kind": "message",
+    "id": "event-1-start_event-log",
+    "data": {
+      "type": "log",
+      "app_key": "vega_level_sensor",
+      "key": "start_event",
+      "value": -5875200000
+    },
+    "timestamp_fields": [
+      {
+        "path": [
+          "value"
+        ],
+        "unit": "ms"
+      }
+    ]
+  },
+  {
+    "timestamp": -5767200000,
+    "kind": "message",
+    "id": "event-1-stop_event-rpc",
+    "data": {
+      "type": "rpc",
+      "app_key": "vega_level_sensor",
+      "method": "stop_event",
+      "request": -5767200000,
+      "status": {
+        "code": "success",
+        "message": null
+      },
+      "response": {
+        "recorded": true
+      }
+    },
+    "timestamp_fields": [
+      {
+        "path": [
+          "request"
+        ],
+        "unit": "ms"
+      }
+    ]
+  },
+  {
+    "timestamp": -5767200000,
+    "kind": "message",
+    "id": "event-1-stop_event-log",
+    "data": {
+      "type": "log",
+      "app_key": "vega_level_sensor",
+      "key": "stop_event",
+      "value": -5767200000
+    },
+    "timestamp_fields": [
+      {
+        "path": [
+          "value"
+        ],
+        "unit": "ms"
+      }
+    ]
+  },
+  {
+    "timestamp": -2764800000,
+    "kind": "message",
+    "id": "event-2-start_event-rpc",
+    "data": {
+      "type": "rpc",
+      "app_key": "vega_level_sensor",
+      "method": "start_event",
+      "request": -2764800000,
+      "status": {
+        "code": "success",
+        "message": null
+      },
+      "response": {
+        "recorded": true
+      }
+    },
+    "timestamp_fields": [
+      {
+        "path": [
+          "request"
+        ],
+        "unit": "ms"
+      }
+    ]
+  },
+  {
+    "timestamp": -2764800000,
+    "kind": "message",
+    "id": "event-2-start_event-log",
+    "data": {
+      "type": "log",
+      "app_key": "vega_level_sensor",
+      "key": "start_event",
+      "value": -2764800000
+    },
+    "timestamp_fields": [
+      {
+        "path": [
+          "value"
+        ],
+        "unit": "ms"
+      }
+    ]
+  },
+  {
+    "timestamp": -2656800000,
+    "kind": "message",
+    "id": "event-2-stop_event-rpc",
+    "data": {
+      "type": "rpc",
+      "app_key": "vega_level_sensor",
+      "method": "stop_event",
+      "request": -2656800000,
+      "status": {
+        "code": "success",
+        "message": null
+      },
+      "response": {
+        "recorded": true
+      }
+    },
+    "timestamp_fields": [
+      {
+        "path": [
+          "request"
+        ],
+        "unit": "ms"
+      }
+    ]
+  },
+  {
+    "timestamp": -2656800000,
+    "kind": "message",
+    "id": "event-2-stop_event-log",
+    "data": {
+      "type": "log",
+      "app_key": "vega_level_sensor",
+      "key": "stop_event",
+      "value": -2656800000
+    },
+    "timestamp_fields": [
+      {
+        "path": [
+          "value"
+        ],
+        "unit": "ms"
+      }
+    ]
+  },
+  {
+    "timestamp": -432000000,
+    "kind": "message",
+    "id": "event-3-start_event-rpc",
+    "data": {
+      "type": "rpc",
+      "app_key": "vega_level_sensor",
+      "method": "start_event",
+      "request": -432000000,
+      "status": {
+        "code": "success",
+        "message": null
+      },
+      "response": {
+        "recorded": true
+      }
+    },
+    "timestamp_fields": [
+      {
+        "path": [
+          "request"
+        ],
+        "unit": "ms"
+      }
+    ]
+  },
+  {
+    "timestamp": -432000000,
+    "kind": "message",
+    "id": "event-3-start_event-log",
+    "data": {
+      "type": "log",
+      "app_key": "vega_level_sensor",
+      "key": "start_event",
+      "value": -432000000
+    },
+    "timestamp_fields": [
+      {
+        "path": [
+          "value"
+        ],
+        "unit": "ms"
+      }
+    ]
+  },
+  {
+    "timestamp": -324000000,
+    "kind": "message",
+    "id": "event-3-stop_event-rpc",
+    "data": {
+      "type": "rpc",
+      "app_key": "vega_level_sensor",
+      "method": "stop_event",
+      "request": -324000000,
+      "status": {
+        "code": "success",
+        "message": null
+      },
+      "response": {
+        "recorded": true
+      }
+    },
+    "timestamp_fields": [
+      {
+        "path": [
+          "request"
+        ],
+        "unit": "ms"
+      }
+    ]
+  },
+  {
+    "timestamp": -324000000,
+    "kind": "message",
+    "id": "event-3-stop_event-log",
+    "data": {
+      "type": "log",
+      "app_key": "vega_level_sensor",
+      "key": "stop_event",
+      "value": -324000000
+    },
+    "timestamp_fields": [
+      {
+        "path": [
+          "value"
+        ],
+        "unit": "ms"
+      }
+    ]
+  },
+  {
+    "timestamp": 0,
+    "kind": "aggregate",
+    "mode": "merge",
+    "data": {
+      "vega_level_sensor": {
+        "start_event": -432000000,
+        "stop_event": -324000000
+      },
+      "solar_power_management": {
+        "low_battery_alarm": 11.0,
+        "enable_immunity": null
+      }
+    },
+    "timestamp_fields": [
+      {
+        "path": [
+          "vega_level_sensor",
+          "start_event"
+        ],
+        "unit": "ms"
+      },
+      {
+        "path": [
+          "vega_level_sensor",
+          "stop_event"
+        ],
+        "unit": "ms"
+      }
+    ]
+  }
+]

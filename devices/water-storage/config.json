@@ -1,0 +1,140 @@
+{
+  "schema_version": 1,
+  "slug": "water-storage",
+  "name": "Water storage example",
+  "processor": {
+    "app_key": "example_device",
+    "application_name": "example_device"
+  },
+  "apps": [
+    {
+      "app_key": "vega_level_sensor",
+      "application_name": "vega_level_sensor",
+      "run": false,
+      "config": {
+        "sensor_rl": 4.5,
+        "full_rl": 4.0,
+        "empty_rl": 0.0,
+        "modbus_id": 1,
+        "storage_curve": [
+          {
+            "level": 0.0,
+            "volume": 0.0
+          },
+          {
+            "level": 4.0,
+            "volume": 10.0
+          }
+        ],
+        "modbus_config": {
+          "bus_type": "serial",
+          "name": "example_bus",
+          "serial_port": "/dev/null",
+          "serial_baud": 9600,
+          "serial_method": "rtu",
+          "serial_data_bits": 8,
+          "serial_parity": "None",
+          "serial_stop_bits": 1,
+          "serial_timeout": 0.3
+        },
+        "dv_app_position": 100
+      }
+    },
+    {
+      "app_key": "solar_power_management",
+      "application_name": "solar_power_management",
+      "run": false,
+      "config": {
+        "profile": "Regular (12V)",
+        "sleep_time_thresholds": [],
+        "min_awake_time_thresholds": [],
+        "override_shutdown_permission_in_minutes": 60,
+        "wakeon_voltage": null,
+        "victron_configs": [],
+        "dv_app_position": 120
+      }
+    }
+  ],
+  "channels": [
+    "ui_state",
+    "tag_values",
+    "ui_cmds",
+    "deployment_config"
+  ],
+  "duration_ms": 2592000000,
+  "interpolation": [
+    {
+      "path": [
+        "vega_level_sensor",
+        "last_volume"
+      ],
+      "max_gap_ms": 21600000
+    },
+    {
+      "path": [
+        "vega_level_sensor",
+        "last_rl"
+      ],
+      "max_gap_ms": 21600000
+    },
+    {
+      "path": [
+        "vega_level_sensor",
+        "last_raw_distance"
+      ],
+      "max_gap_ms": 21600000
+    },
+    {
+      "path": [
+        "vega_level_sensor",
+        "last_reliability"
+      ],
+      "max_gap_ms": 21600000
+    },
+    {
+      "path": [
+        "solar_power_management",
+        "system_voltage"
+      ],
+      "max_gap_ms": 21600000
+    },
+    {
+      "path": [
+        "solar_power_management",
+        "system_power"
+      ],
+      "max_gap_ms": 21600000
+    },
+    {
+      "path": [
+        "solar_power_management",
+        "system_temperature"
+      ],
+      "max_gap_ms": 21600000
+    }
+  ],
+  "inputs": [
+    {
+      "app_key": "vega_level_sensor",
+      "method": "start_event",
+      "value_type": "integer"
+    },
+    {
+      "app_key": "vega_level_sensor",
+      "method": "stop_event",
+      "value_type": "integer"
+    },
+    {
+      "app_key": "solar_power_management",
+      "method": "low_battery_alarm",
+      "value_type": "number",
+      "min": 6,
+      "max": 13
+    },
+    {
+      "app_key": "solar_power_management",
+      "method": "enable_immunity",
+      "value_type": "integer"
+    }
+  ]
+}

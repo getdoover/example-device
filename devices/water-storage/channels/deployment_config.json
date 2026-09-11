@@ -1,0 +1,48 @@
+[
+  {
+    "timestamp": 0,
+    "kind": "aggregate",
+    "mode": "merge",
+    "data": {
+      "applications": {
+        "vega_level_sensor": {
+          "sensor_rl": 4.5,
+          "full_rl": 4.0,
+          "empty_rl": 0.0,
+          "modbus_id": 1,
+          "storage_curve": [
+            {
+              "level": 0.0,
+              "volume": 0.0
+            },
+            {
+              "level": 4.0,
+              "volume": 10.0
+            }
+          ],
+          "modbus_config": {
+            "bus_type": "serial",
+            "name": "example_bus",
+            "serial_port": "/dev/null",
+            "serial_baud": 9600,
+            "serial_method": "rtu",
+            "serial_data_bits": 8,
+            "serial_parity": "None",
+            "serial_stop_bits": 1,
+            "serial_timeout": 0.3
+          },
+          "dv_app_position": 100
+        },
+        "solar_power_management": {
+          "profile": "Regular (12V)",
+          "sleep_time_thresholds": [],
+          "min_awake_time_thresholds": [],
+          "override_shutdown_permission_in_minutes": 60,
+          "wakeon_voltage": null,
+          "victron_configs": [],
+          "dv_app_position": 120
+        }
+      }
+    }
+  }
+]

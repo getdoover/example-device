@@ -1,0 +1,301 @@
+[
+  {
+    "timestamp": 0,
+    "kind": "aggregate",
+    "mode": "merge",
+    "data": {
+      "state": {
+        "children": {
+          "vega_level_sensor": {
+            "name": "vega_level_sensor",
+            "type": "uiApplication",
+            "displayString": "Water storage",
+            "hidden": false,
+            "position": 100,
+            "defaultOpen": true,
+            "children": {
+              "example_notice": {
+                "name": "example_notice",
+                "type": "uiVariable",
+                "displayString": "Example device",
+                "position": 1,
+                "hidden": false,
+                "showActivity": false,
+                "varType": "string",
+                "currentValue": "Example device: all measurements are precreated. Inputs record your selection and acknowledgement, but do not change the incoming data.",
+                "notGraphable": true
+              },
+              "volume": {
+                "name": "volume",
+                "type": "uiVariable",
+                "displayString": "Volume",
+                "showActivity": true,
+                "position": 10,
+                "hidden": false,
+                "units": "ML",
+                "varType": "float",
+                "currentValue": "$tag.app().last_volume:number:null",
+                "decPrecision": 1,
+                "form": "radialGauge",
+                "ranges": [
+                  {
+                    "min": 0,
+                    "max": 4,
+                    "colour": "yellow",
+                    "label": "Low",
+                    "show_on_graph": true
+                  },
+                  {
+                    "min": 4,
+                    "max": 8,
+                    "colour": "blue",
+                    "label": "Half",
+                    "show_on_graph": true
+                  },
+                  {
+                    "min": 8,
+                    "max": 10,
+                    "colour": "green",
+                    "label": "Full",
+                    "show_on_graph": true
+                  }
+                ]
+              },
+              "water_rl": {
+                "name": "water_rl",
+                "type": "uiVariable",
+                "displayString": "Water RL",
+                "showActivity": true,
+                "position": 20,
+                "hidden": false,
+                "units": "m",
+                "varType": "float",
+                "currentValue": "$tag.app().last_rl:number:null",
+                "decPrecision": 3
+              },
+              "event_volume": {
+                "name": "event_volume",
+                "type": "uiVariable",
+                "displayString": "Event Volume",
+                "showActivity": true,
+                "position": 30,
+                "hidden": "$tag.app().stop_event_hidden:boolean:true",
+                "units": "ML",
+                "varType": "float",
+                "currentValue": "$tag.app().event_volume:number:null",
+                "decPrecision": 2
+              },
+              "last_read": {
+                "name": "last_read",
+                "type": "uiTimestamp",
+                "displayString": "Last Read",
+                "showActivity": true,
+                "position": 40,
+                "hidden": false,
+                "varType": "timestamp",
+                "currentValue": "$tag.app().time_last_update:number:null"
+              },
+              "start_event": {
+                "name": "start_event",
+                "type": "uiButton",
+                "displayString": "Start Event",
+                "position": 50,
+                "hidden": false,
+                "colour": "blue",
+                "currentValue": "$cmds.app().start_event",
+                "requiresConfirm": false
+              },
+              "stop_event": {
+                "name": "stop_event",
+                "type": "uiButton",
+                "displayString": "Stop Event",
+                "position": 60,
+                "hidden": false,
+                "colour": "red",
+                "currentValue": "$cmds.app().stop_event",
+                "requiresConfirm": false
+              },
+              "sensor_details": {
+                "name": "sensor_details",
+                "type": "uiSubmodule",
+                "displayString": "Sensor Details",
+                "position": 70,
+                "hidden": false,
+                "defaultOpen": false,
+                "children": {
+                  "sensor_distance": {
+                    "name": "sensor_distance",
+                    "type": "uiVariable",
+                    "displayString": "Sensor Distance",
+                    "showActivity": true,
+                    "position": 10,
+                    "hidden": false,
+                    "units": "m",
+                    "varType": "float",
+                    "currentValue": "$tag.app().last_raw_distance:number:null",
+                    "decPrecision": 3
+                  },
+                  "measurement_reliability": {
+                    "name": "measurement_reliability",
+                    "type": "uiVariable",
+                    "displayString": "Measurement Reliability",
+                    "showActivity": true,
+                    "position": 20,
+                    "hidden": false,
+                    "units": "dB",
+                    "varType": "float",
+                    "currentValue": "$tag.app().last_reliability:number:null",
+                    "decPrecision": 1
+                  }
+                }
+              },
+              "warning_indicator": {
+                "name": "warning_indicator",
+                "type": "uiWarningIndicator",
+                "displayString": "$tag.app().warning_name:string",
+                "position": 80,
+                "hidden": "$tag.app().warning_hidden:boolean:true",
+                "can_cancel": false
+              }
+            }
+          },
+          "solar_power_management": {
+            "name": "solar_power_management",
+            "type": "uiApplication",
+            "displayString": "Power & Battery",
+            "hidden": false,
+            "position": 120,
+            "defaultOpen": true,
+            "children": {
+              "battery_voltage": {
+                "name": "battery_voltage",
+                "type": "uiVariable",
+                "displayString": "Battery Voltage",
+                "showActivity": true,
+                "position": 10,
+                "hidden": false,
+                "units": "V",
+                "varType": "float",
+                "currentValue": "$tag.app().system_voltage:number:null",
+                "decPrecision": 1,
+                "ranges": [
+                  {
+                    "min": 11.5,
+                    "max": 12.3,
+                    "colour": "yellow",
+                    "label": "Low",
+                    "show_on_graph": true
+                  },
+                  {
+                    "min": 12.3,
+                    "max": 13,
+                    "colour": "blue",
+                    "label": "Good",
+                    "show_on_graph": true
+                  },
+                  {
+                    "min": 13,
+                    "max": 14,
+                    "colour": "green",
+                    "label": "Charging",
+                    "show_on_graph": true
+                  },
+                  {
+                    "min": 14,
+                    "max": 14.5,
+                    "colour": "red",
+                    "label": "OverCharging",
+                    "show_on_graph": true
+                  }
+                ]
+              },
+              "low_battery_alarm": {
+                "name": "low_battery_alarm",
+                "type": "uiSlider",
+                "displayString": "Low Battery Alarm",
+                "position": 20,
+                "hidden": false,
+                "units": "V",
+                "currentValue": "$cmds.app().low_battery_alarm::11.0",
+                "default": 11.0,
+                "min": 6,
+                "max": 13,
+                "stepSize": 0.25,
+                "dualSlider": false,
+                "isInverted": false
+              },
+              "system_power": {
+                "name": "system_power",
+                "type": "uiVariable",
+                "displayString": "System Power",
+                "showActivity": true,
+                "position": 30,
+                "hidden": false,
+                "units": "W",
+                "varType": "float",
+                "currentValue": "$tag.app().system_power:number:null",
+                "decPrecision": 1
+              },
+              "temperature": {
+                "name": "temperature",
+                "type": "uiVariable",
+                "displayString": "Temperature",
+                "showActivity": true,
+                "position": 40,
+                "hidden": false,
+                "units": "°C",
+                "varType": "float",
+                "currentValue": "$tag.app().system_temperature:number:null",
+                "decPrecision": 1
+              },
+              "online_now": {
+                "name": "online_now",
+                "type": "uiVariable",
+                "displayString": "Online Now",
+                "position": 50,
+                "hidden": false,
+                "showActivity": true,
+                "varType": "bool",
+                "currentValue": "$tag.app().is_online:boolean:true"
+              },
+              "enable_immunity": {
+                "name": "enable_immunity",
+                "type": "uiButton",
+                "displayString": "Stay On For 30 Mins",
+                "position": 60,
+                "hidden": false,
+                "colour": "blue",
+                "currentValue": "$cmds.app().enable_immunity",
+                "requiresConfirm": false
+              },
+              "low_battery": {
+                "name": "low_battery",
+                "type": "uiWarningIndicator",
+                "displayString": "Low Battery",
+                "position": 70,
+                "hidden": "$tag.app().low_batt_warning_hidden:boolean:true",
+                "can_cancel": false
+              },
+              "is_immune_warning": {
+                "name": "is_immune_warning",
+                "type": "uiWarningIndicator",
+                "displayString": "$tag.app().immune_warning_text:string",
+                "position": 80,
+                "hidden": "$tag.app().immune_warning_hidden:boolean:true",
+                "can_cancel": false
+              },
+              "about_to_sleep_warning": {
+                "name": "about_to_sleep_warning",
+                "type": "uiWarningIndicator",
+                "displayString": "$tag.app().about_to_sleep_warning_text:string",
+                "position": 90,
+                "hidden": "$tag.app().about_to_sleep_warning_hidden:boolean:true",
+                "can_cancel": false
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+]
