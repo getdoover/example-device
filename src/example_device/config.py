@@ -61,7 +61,7 @@ def manifest() -> dict:
     return {
         "example_device": {
             "name": "example_device",
-            "display_name": "Example Device",
+            "display_name": "Example Device Manager",
             "type": "PRO",
             "visibility": "PUB",
             "allow_many": False,
