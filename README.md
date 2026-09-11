@@ -42,6 +42,8 @@ The generator is deterministic. With matplotlib installed, `--charts` writes pre
 
 ## Cloud setup
 
+GitHub Actions uses `getdoover/workflows/.github/workflows/app.yml@main` to check, build, and publish the processor to production and staging. Pushes to `main` create releases; pull requests targeting `main` create alpha releases. The workflow can also be started manually. Doover authentication uses GitHub OIDC, with no API token stored in the repository. Both environments receive the same `package.zip`, built by `build.sh` from runtime dependencies and processor source only.
+
 Install the processor from `doover_config.json` with `repository`, `dataset_slug`, `dataset_revision`, and `anchor_ms`. The pinned dataset must be publicly accessible; downloads are anonymous.
 
 Use one Lambda function for all example devices with reserved concurrency **1** and `lambda:GetFunctionConcurrency` permission on that function. The processor checks this before cloud writes. Defaults subscribe to `ui_cmds` and `dv-ui-sub`, with a `rate(1 minute)` schedule. All devices share that capacity.

@@ -68,6 +68,7 @@ def manifest() -> dict:
             "description": "Publishes precomputed example telemetry and acknowledges demo controls.",
             "depends_on": [],
             "export_config_command": "export-config",
+            "export_ui_command": "export-config",
             "lambda_config": {
                 "Runtime": "python3.13",
                 "Timeout": 300,

@@ -1,0 +1,22 @@
+name: Doover App
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  app:
+    uses: getdoover/workflows/.github/workflows/app.yml@main
+    with:
+      staging: true
+      release: true
+      python-version: '3.13'
+      lint-blocking: true
+    secrets: inherit
