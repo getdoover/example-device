@@ -43,6 +43,24 @@ class ExampleDevice(Application):
         self.serialization_verified = serialization_verified
         self.failure = None
 
+    async def _handle_event(self, event, subscription_id=None):
+        # Subscriptions include response updates and our own imported/logged
+        # messages. Reject them before the SDK lifecycle: its early-skip summary
+        # needs an app_id that is only available after setup, and its dispatcher
+        # does not handle message-update notifications.
+        operation = event["op"]
+        if operation == "on_message_create":
+            payload = MessageCreateEvent.from_dict(event["d"])
+        elif operation == "on_aggregate_update":
+            payload = AggregateUpdateEvent.from_dict(event["d"])
+        elif operation in ("on_deployment", "on_schedule"):
+            return await super()._handle_event(event, subscription_id)
+        else:
+            return None
+        if not await self.pre_hook_filter(payload):
+            return None
+        return await super()._handle_event(event, subscription_id)
+
     async def _dispatch_invocation(self, event, subscription_id):
         try:
             return await super()._dispatch_invocation(event, subscription_id)

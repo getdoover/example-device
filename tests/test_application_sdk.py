@@ -323,3 +323,40 @@ async def test_sdk_presence_event_interpolates_without_dense_history(monkeypatch
 )
 def test_only_fresh_page_presence_enables_viewing(presence):
     assert application.is_page_observed(presence, ANCHOR) is False
+
+
+@pytest.mark.parametrize(
+    "kind", ["on_message_update", "imported_rpc", "command_log", "unrelated_aggregate"]
+)
+def test_public_entrypoint_ignores_subscription_noise_before_sdk_setup(
+    monkeypatch, caplog, kind
+):
+    backend = SDKBackend()
+    app = make_app(monkeypatch, backend)
+    monkeypatch.setattr(
+        application, "verify_lambda_serialization", lambda context: None
+    )
+    monkeypatch.setattr(application, "ExampleDevice", lambda **kwargs: app)
+    if kind in ("imported_rpc", "command_log"):
+        rpc = rpc_message(backend, marker={"origin": "dataset"})
+        if kind == "command_log":
+            rpc["message"]["data"] = {"type": "log", "app_key": "counter"}
+        event = payload(backend, "on_message_create", rpc)
+    elif kind == "unrelated_aggregate":
+        event = payload(
+            backend,
+            "on_aggregate_update",
+            {
+                "author_id": "606",
+                "channel": {"agent_id": "101", "name": "ui_cmds"},
+                "aggregate": {"data": {}},
+                "request_data": {"data": {}},
+            },
+        )
+    else:
+        event = payload(backend, kind)
+    application.invoke(event, None)
+    app.api.setup.assert_not_awaited()
+    assert backend.calls == []
+    assert app.failure is None
+    assert not [record for record in caplog.records if record.levelname == "ERROR"]
