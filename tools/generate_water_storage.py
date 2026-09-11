@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
-"""Generate a new synthetic water-storage example and its local review files.
+"""Generate the synthetic water-storage dataset and optional preview charts.
 
 Run from any directory with Python 3.11 or newer. The dataset uses only the
-standard library. Add --charts with matplotlib installed to draw review charts.
+standard library. Add --charts with matplotlib installed to draw preview charts.
 No network, source deployment export, or customer data is read.
 """
 
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import math
 import random
@@ -334,7 +333,7 @@ def verify_written_dataset(directory):
     return config, channels, samples
 
 
-def draw_charts(review, samples):
+def draw_charts(directory, samples):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -364,7 +363,7 @@ def draw_charts(review, samples):
     axes[2].axvline(0, color="#243b53", linestyle="--", linewidth=1)
     for ax in axes:
         ax.grid(alpha=0.17)
-    fig.savefig(review / "timeline.png", dpi=150)
+    fig.savefig(directory / "timeline.png", dpi=150)
     plt.close(fig)
 
     start, stop = EVENTS[-1]
@@ -380,91 +379,14 @@ def draw_charts(review, samples):
         ax.axvline(30, color="#bf4747", linestyle="--", label="Stop Event")
         ax.grid(alpha=0.17)
     axes[0].legend(loc="lower right")
-    fig.savefig(review / "historical-event.png", dpi=150)
+    fig.savefig(directory / "historical-event.png", dpi=150)
     plt.close(fig)
-
-
-def review_files(review, directory, config, channels, samples, charts):
-    review.mkdir(parents=True, exist_ok=True)
-    counts = {name: dict(Counter(row["kind"] for row in records)) for name, records in channels.items()}
-    bands = {
-        "history_45_to_90_days": sum(row["timestamp"] < -45 * DAY for row in samples),
-        "history_14_to_45_days": sum(-45 * DAY <= row["timestamp"] < -14 * DAY for row in samples),
-        "history_0_to_14_days": sum(-14 * DAY <= row["timestamp"] < 0 for row in samples),
-        "anchor": sum(row["timestamp"] == 0 for row in samples),
-        "future": sum(row["timestamp"] > 0 for row in samples),
-    }
-    inventory = []
-    for path in sorted(directory.rglob("*.json")):
-        contents = path.read_bytes()
-        inventory.append({"path": str(path.relative_to(directory)), "bytes": len(contents), "sha256": hashlib.sha256(contents).hexdigest()})
-    summary = {
-        "status": "local_uncommitted_awaiting_user_review",
-        "provenance": "new deterministic synthetic scenario; no customer export or live data read by generator",
-        "seed": SEED,
-        "tank": {"capacity_ML": CAPACITY_ML, "usable_depth_m": DEPTH_M, "sensor_reference_m": SENSOR_M, "volume_display_decimals": 1},
-        "processor": config["processor"],
-        "apps": [{"app_key": app["app_key"], "application_name": app["application_name"], "run": app["run"]} for app in config["apps"]],
-        "channels": counts, "sample_counts": bands, "historical_input_events": len(EVENTS) * 2,
-        "future_input_events": 0, "files": inventory,
-        "checks": ["JSON reread", "exact deterministic sampling schedule", "volume/depth/distance identity", "historical event state transitions", "zero baseline", "no future input records"],
-        "limits": ["no live integration target used", "customer-specific review scan is a separate private check", "human public-data review remains required"],
-    }
-    write_json(review / "summary.json", summary)
-    channel_rows = "\n".join(f"| `{name}` | {count.get('aggregate', 0)} | {count.get('message', 0)} |" for name, count in counts.items())
-    preview_links = "\n![Timeline](timeline.png)\n\n![Historical event](historical-event.png)\n" if charts else "\nCharts are optional. Regenerate with `--charts` and matplotlib installed.\n"
-    contract_note = (
-        "\nThe separate [native contract check](native-contract-check.json) binds its results to file hashes. "
-        "Its [verification script](check_app_contracts.py) loads current app config classes and UI definitions "
-        "from local source clones, rejects unknown config fields, and compares native bindings and controls.\n"
-        if (review / "native-contract-check.json").exists() else ""
-    )
-    (review / "README.md").write_text(f"""# Water-storage example review
-
-Status: local and uncommitted. This example requires the user's review before staging, committing, pushing, or publishing.
-
-The generator creates a new synthetic scenario without reading a customer export or customer data. The retained app contracts are Vega Level Sensor and Solar Power Management. Only the example processor runs. Device and app identities are assigned by organisation provisioning.
-
-## Proposed device
-
-The broad water storage holds {CAPACITY_ML:g} ML across {DEPTH_M:g} m of usable depth. Empty reference is 0 m, full reference is {DEPTH_M:g} m, and sensor reference is {SENSOR_M:g} m. A new linear curve maps 0 m to 0 ML and {DEPTH_M:g} m to {CAPACITY_ML:g} ML. The generated UI displays one decimal place. The physical identity is `volume_ML = water_rl_m × 2.5` and `sensor_distance_m = 4.5 - water_rl_m`.
-
-Solar telemetry follows an independently generated 12 V daylight cycle. The app uses fresh `Regular (12V)` settings with no charger hardware. The inert sensor config uses `/dev/null` for its serial port. Neither app runs hardware or network services.
-
-## Recorded data
-
-| Channel | Aggregates | Messages |
-| --- | ---: | ---: |
-{channel_rows}
-
-History covers 90 days. Base sampling is six hours beyond 45 days, two hours from 14 to 45 days, and 30 minutes within 14 days. Extra points surround six historical Start Event and Stop Event commands. The future covers 30 days at 30-minute spacing, with no authored input changes. Selected continuous numeric paths can be interpolated for live viewing.
-
-The latest historical event measures a refill. RPC messages, input logs, and tag values are all precomputed. Both event buttons remain visible because live commands only record the selection and acknowledgement. They do not toggle event tags or alter measurements. The permanent notice explains this behavior. Low Battery Alarm and Stay On For 30 Mins have the same acknowledgement-only behavior.
-
-Embedded times declare their units. `time_last_update`, button requests, button selections, and input-log values use milliseconds. `event_started_at` uses seconds. All source values are relative to the installation anchor. Metadata and event bookkeeping are excluded from numeric interpolation.
-
-The deployment aggregate contains portable app settings under `applications`. It contains no installation identities. The runtime must preserve newly provisioned identities and processor settings when reconciling this aggregate. No optional UI override channel is needed because presentation choices are included in the static UI.
-
-## Review artifacts
-
-[Device config](../../devices/water-storage/config.json), [deployment config](../../devices/water-storage/channels/deployment_config.json), [static UI](../../devices/water-storage/channels/ui_state.json), and [file inventory with hashes](summary.json) contain the complete local proposal.
-{contract_note}
-{preview_links}
-## Reproduce
-
-Run `python3 tools/generate_water_storage.py` from the repository. Add `--charts` when matplotlib is installed. The generator rereads the output JSON and checks physical identities, event transitions, sampling, and the absence of future inputs. It does not make commits or contact Doover.
-
-See the [private source scan](privacy-check.json) for the separately run source check. The generator does not perform that scan. The user must still approve the example before it is staged, committed, pushed, or published. The generated chart is a data preview; it is not a screenshot of a deployed Doover device.
-""", encoding="utf-8")
-    if charts:
-        draw_charts(review, samples)
-    return summary
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=Path(__file__).resolve().parents[1] / "devices" / "water-storage")
-    parser.add_argument("--review", type=Path, default=Path(__file__).resolve().parents[1] / "review" / "water-storage")
+    parser.add_argument("--charts-dir", type=Path, default=Path(__file__).resolve().parents[1] / "build" / "water-storage")
     parser.add_argument("--charts", action="store_true")
     args = parser.parse_args()
     config = device_config()
@@ -473,8 +395,11 @@ def main():
     for name, rows in channels.items():
         write_json(args.output / "channels" / f"{name}.json", rows)
     config, channels, samples = verify_written_dataset(args.output)
-    summary = review_files(args.review, args.output, config, channels, samples, args.charts)
-    print(json.dumps({"dataset": str(args.output), "review": str(args.review), "channels": summary["channels"], "sample_counts": summary["sample_counts"]}, indent=2))
+    if args.charts:
+        args.charts_dir.mkdir(parents=True, exist_ok=True)
+        draw_charts(args.charts_dir, samples)
+    counts = {name: dict(Counter(row["kind"] for row in records)) for name, records in channels.items()}
+    print(json.dumps({"dataset": str(args.output), "channels": counts, "telemetry_samples": len(samples)}, indent=2))
 
 
 if __name__ == "__main__":
