@@ -1,0 +1,20 @@
+[
+  {
+    "timestamp": 0,
+    "kind": "aggregate",
+    "mode": "merge",
+    "data": {
+      "ops": [
+        {
+          "op": "patch",
+          "target": {
+            "byName": "example_device"
+          },
+          "changes": {
+            "hidden": true
+          }
+        }
+      ]
+    }
+  }
+]

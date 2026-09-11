@@ -431,7 +431,13 @@ def device_config():
                 },
             },
         ],
-        "channels": ["ui_state", "tag_values", "ui_cmds", "deployment_config"],
+        "channels": [
+            "ui_state",
+            "tag_values",
+            "ui_cmds",
+            "deployment_config",
+            "ui_overrides",
+        ],
         "duration_ms": 30 * DAY,
         "interpolation": [
             {"path": [app, tag], "max_gap_ms": 6 * HOUR}
@@ -530,6 +536,19 @@ def generate_channels(config):
         "tag_values": samples,
         "ui_cmds": commands,
         "deployment_config": [aggregate(deployment)],
+        "ui_overrides": [
+            aggregate(
+                {
+                    "ops": [
+                        {
+                            "op": "patch",
+                            "target": {"byName": config["processor"]["app_key"]},
+                            "changes": {"hidden": True},
+                        }
+                    ]
+                }
+            )
+        ],
     }
 
 
