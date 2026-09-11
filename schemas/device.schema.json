@@ -1,0 +1,373 @@
+{
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{0,127}$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "apps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "app_key": {
+            "type": "string",
+            "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,127}$"
+          },
+          "application_name": {
+            "type": "string",
+            "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,127}$"
+          },
+          "config": {
+            "allOf": [
+              {
+                "type": "object"
+              },
+              {
+                "$ref": "#/$defs/jsonValue"
+              }
+            ]
+          },
+          "run": {
+            "const": false
+          }
+        },
+        "required": [
+          "app_key",
+          "application_name",
+          "config",
+          "run"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "channels": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "allOf": [
+          {
+            "type": "string",
+            "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,127}$"
+          },
+          {
+            "not": {
+              "const": "dv-ui-sub"
+            }
+          }
+        ]
+      }
+    },
+    "duration_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "processor": {
+      "type": "object",
+      "properties": {
+        "app_key": {
+          "type": "string",
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,127}$"
+        },
+        "application_name": {
+          "type": "string",
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,127}$"
+        }
+      },
+      "required": [
+        "app_key",
+        "application_name"
+      ],
+      "additionalProperties": false
+    },
+    "interpolation": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "array",
+            "minItems": 2,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "max_gap_ms": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "app_key": {
+            "type": "string",
+            "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,127}$"
+          },
+          "method": {
+            "type": "string",
+            "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,127}$"
+          },
+          "value_type": {
+            "enum": [
+              "boolean",
+              "number",
+              "integer",
+              "string",
+              "null",
+              "object"
+            ]
+          },
+          "min": {
+            "type": "number"
+          },
+          "max": {
+            "type": "number"
+          },
+          "choices": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/$defs/jsonValue"
+            }
+          }
+        },
+        "required": [
+          "app_key",
+          "method",
+          "value_type"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "value_type": {
+                  "const": "boolean"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "choices": {
+                  "items": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "value_type": {
+                  "const": "number"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "choices": {
+                  "items": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "value_type": {
+                  "const": "integer"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "choices": {
+                  "items": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "value_type": {
+                  "const": "string"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "choices": {
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "value_type": {
+                  "const": "null"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "choices": {
+                  "items": {
+                    "type": "null"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "value_type": {
+                  "const": "object"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "choices": {
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "value_type": {
+                  "enum": [
+                    "boolean",
+                    "string",
+                    "null",
+                    "object"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "not": {
+                "anyOf": [
+                  {
+                    "required": [
+                      "min"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "max"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "slug",
+    "name",
+    "apps",
+    "channels",
+    "duration_ms"
+  ],
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Portable example device v1",
+  "$comment": "parse_dataset also checks app ownership, forbidden runtime identities, numeric finiteness, host exclusion, unique app/input/path identities, and cross-file consistency. Apps are inert; processor metadata identifies the separately installed replay app.",
+  "$defs": {
+    "jsonValue": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/jsonValue"
+          }
+        },
+        {
+          "type": "object",
+          "propertyNames": {
+            "not": {
+              "enum": [
+                "AGENT_ID",
+                "APPLICATION_ID",
+                "APPLICATION_INSTALL_ID",
+                "APP_ID",
+                "APP_INSTALL_ID",
+                "APP_INSTALL_KEY",
+                "APP_KEY",
+                "DEVICE_ID",
+                "DEVICE_LIST",
+                "DEVICE_MAP",
+                "ORGANISATION_ID",
+                "ORGANIZATION_ID",
+                "_example_device",
+                "agent_id",
+                "app_id",
+                "app_install_id",
+                "application_id",
+                "application_install_id",
+                "device_id",
+                "organisation_id",
+                "organization_id",
+                "owner_id"
+              ]
+            }
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/jsonValue"
+          }
+        }
+      ]
+    }
+  }
+}

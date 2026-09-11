@@ -1,0 +1,39 @@
+[project]
+name = "doover-example-device"
+version = "0.1.0"
+description = "Resumable playback processor for Doover example devices"
+requires-python = ">=3.13"
+dependencies = [
+  "pydoover @ git+https://github.com/getdoover/pydoover.git@c68dc9509ce83e30c0aa635f48b02eb7b310ae67",
+  "boto3>=1.40,<2",
+]
+
+[project.scripts]
+example-device = "example_device.cli:main"
+export-config = "example_device.config:export"
+
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/example_device"]
+
+[tool.hatch.build.targets.sdist]
+include = ["/src/example_device", "/pyproject.toml", "/uv.lock", "/doover_config.json", "/schemas"]
+
+[dependency-groups]
+dev = ["pytest>=8.3", "pytest-asyncio>=0.26", "jsonschema>=4.23", "ruff>=0.11", "build>=1.2"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.ruff]
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]

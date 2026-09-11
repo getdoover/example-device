@@ -1,0 +1,186 @@
+{
+  "example_device": {
+    "name": "example_device",
+    "display_name": "Example Device",
+    "type": "PRO",
+    "visibility": "PUB",
+    "allow_many": false,
+    "description": "Publishes precomputed example telemetry and acknowledges demo controls.",
+    "depends_on": [],
+    "export_config_command": "export-config",
+    "lambda_config": {
+      "Runtime": "python3.13",
+      "Timeout": 300,
+      "Handler": "src.example_device.handler",
+      "MemorySize": 256,
+      "Architectures": [
+        "arm64"
+      ],
+      "Environment": {}
+    },
+    "config_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "",
+      "title": "$default",
+      "type": "object",
+      "properties": {
+        "repository": {
+          "title": "Dataset repository",
+          "x-name": "repository",
+          "x-hidden": false,
+          "type": [
+            "string",
+            "null"
+          ],
+          "x-required": false,
+          "default": "getdoover/example-device",
+          "x-position": 0
+        },
+        "dataset_slug": {
+          "title": "Dataset",
+          "x-name": "dataset_slug",
+          "x-hidden": false,
+          "type": "string",
+          "x-required": true,
+          "description": "Directory name under devices/",
+          "x-position": 1
+        },
+        "dataset_revision": {
+          "title": "Dataset commit",
+          "x-name": "dataset_revision",
+          "x-hidden": false,
+          "type": "string",
+          "x-required": true,
+          "description": "Full immutable Git commit SHA",
+          "x-position": 2
+        },
+        "anchor_ms": {
+          "title": "Start timestamp",
+          "x-name": "anchor_ms",
+          "x-hidden": false,
+          "type": "integer",
+          "x-required": true,
+          "description": "Fixed creation-day midnight as epoch milliseconds",
+          "x-position": 3
+        },
+        "idle_interval_seconds": {
+          "title": "Idle publish interval",
+          "x-name": "idle_interval_seconds",
+          "x-hidden": false,
+          "type": [
+            "integer",
+            "null"
+          ],
+          "x-required": false,
+          "default": 1800,
+          "x-position": 4,
+          "minimum": 60
+        },
+        "active_interval_seconds": {
+          "title": "Viewed publish interval",
+          "x-name": "active_interval_seconds",
+          "x-hidden": false,
+          "type": [
+            "integer",
+            "null"
+          ],
+          "x-required": false,
+          "default": 60,
+          "x-position": 5,
+          "minimum": 60
+        },
+        "max_batches": {
+          "title": "Import batches per invocation",
+          "x-name": "max_batches",
+          "x-hidden": false,
+          "type": [
+            "integer",
+            "null"
+          ],
+          "x-required": false,
+          "default": 4,
+          "x-position": 6,
+          "minimum": 1,
+          "maximum": 20
+        },
+        "dv_proc_subscriptions": {
+          "title": "Subscription",
+          "x-name": "dv_proc_subscriptions",
+          "x-hidden": true,
+          "type": [
+            "array",
+            "null"
+          ],
+          "x-required": false,
+          "description": "A list of channels to subscribe to.",
+          "default": [
+            "ui_cmds",
+            "dv-ui-sub"
+          ],
+          "x-position": 7,
+          "items": {
+            "title": "Channel Subscription",
+            "x-name": "dv_proc_subscription",
+            "x-hidden": false,
+            "type": "string",
+            "x-required": true,
+            "description": "The name of the channel to subscribe to"
+          }
+        },
+        "dv_proc_schedules": {
+          "title": "Schedule",
+          "x-name": "dv_proc_schedules",
+          "x-hidden": true,
+          "format": "doover-schedule-rate-cron",
+          "type": [
+            "string",
+            "null"
+          ],
+          "x-required": false,
+          "description": "Specify a schedule to run this task.",
+          "default": "rate(1 minute)",
+          "x-position": 8
+        }
+      },
+      "additionalElements": true,
+      "required": [
+        "dataset_slug",
+        "dataset_revision",
+        "anchor_ms"
+      ]
+    },
+    "ui_schema": {
+      "displayString": "$config.app().APP_DISPLAY_NAME",
+      "hidden": "$config.app().interpreter_hidden:boolean:false",
+      "fullWidth": "$config.app().interpreter_full_width:boolean:false",
+      "position": "$config.app().dv_app_position:number:100",
+      "icon": null,
+      "colour": null,
+      "defaultOpen": "$config.app().dv_app_default_open:boolean",
+      "type": "uiApplication",
+      "name": "$config.app().APP_KEY",
+      "children": {
+        "example_data": {
+          "name": "example_data",
+          "type": "uiVariable",
+          "displayString": "Example data",
+          "showActivity": true,
+          "position": 51,
+          "hidden": false,
+          "varType": "string",
+          "currentValue": "Inputs are acknowledged but do not change the precreated telemetry."
+        },
+        "playback": {
+          "name": "playback",
+          "type": "uiVariable",
+          "displayString": "Playback",
+          "showActivity": true,
+          "position": 52,
+          "hidden": false,
+          "varType": "string",
+          "currentValue": "$tag.app().phase:string:\"initializing\""
+        }
+      }
+    }
+  }
+}

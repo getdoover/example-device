@@ -1,0 +1,280 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Portable example channel v1",
+  "$comment": "parse_dataset also checks timestamp order and endpoint, per-channel message identity, owned aggregate scopes, no future scripted inputs, valid earlier message references, declared numeric timestamp paths, and interpolation metadata exclusions. In data, null deletes an aggregate member but remains null in a message.",
+  "type": "array",
+  "items": {
+    "oneOf": [
+      {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "kind": {
+            "const": "aggregate"
+          },
+          "data": {
+            "allOf": [
+              {
+                "type": "object"
+              },
+              {
+                "$ref": "#/$defs/jsonValue"
+              }
+            ]
+          },
+          "timestamp_fields": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "unit": {
+                  "enum": [
+                    "ms",
+                    "s"
+                  ]
+                }
+              },
+              "required": [
+                "path",
+                "unit"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "message_references": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "channel": {
+                  "type": "string",
+                  "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,127}$"
+                },
+                "id": {
+                  "type": "string",
+                  "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$"
+                }
+              },
+              "required": [
+                "path",
+                "channel",
+                "id"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "mode": {
+            "enum": [
+              "merge",
+              "replace"
+            ]
+          },
+          "scope": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^[^.]+$"
+            }
+          }
+        },
+        "required": [
+          "timestamp",
+          "kind",
+          "data",
+          "mode"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "mode": {
+                  "const": "replace"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "scope"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "kind": {
+            "const": "message"
+          },
+          "data": {
+            "allOf": [
+              {
+                "type": "object"
+              },
+              {
+                "$ref": "#/$defs/jsonValue"
+              }
+            ]
+          },
+          "timestamp_fields": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "unit": {
+                  "enum": [
+                    "ms",
+                    "s"
+                  ]
+                }
+              },
+              "required": [
+                "path",
+                "unit"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "message_references": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "channel": {
+                  "type": "string",
+                  "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,127}$"
+                },
+                "id": {
+                  "type": "string",
+                  "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$"
+                }
+              },
+              "required": [
+                "path",
+                "channel",
+                "id"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$"
+          },
+          "apply_to_aggregate": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "timestamp",
+          "kind",
+          "data",
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    ]
+  },
+  "$defs": {
+    "jsonValue": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/jsonValue"
+          }
+        },
+        {
+          "type": "object",
+          "propertyNames": {
+            "not": {
+              "enum": [
+                "AGENT_ID",
+                "APPLICATION_ID",
+                "APPLICATION_INSTALL_ID",
+                "APP_ID",
+                "APP_INSTALL_ID",
+                "APP_INSTALL_KEY",
+                "APP_KEY",
+                "DEVICE_ID",
+                "DEVICE_LIST",
+                "DEVICE_MAP",
+                "ORGANISATION_ID",
+                "ORGANIZATION_ID",
+                "_example_device",
+                "agent_id",
+                "app_id",
+                "app_install_id",
+                "application_id",
+                "application_install_id",
+                "device_id",
+                "organisation_id",
+                "organization_id",
+                "owner_id"
+              ]
+            }
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/jsonValue"
+          }
+        }
+      ]
+    }
+  }
+}
