@@ -360,3 +360,33 @@ def test_public_entrypoint_ignores_subscription_noise_before_sdk_setup(
     assert backend.calls == []
     assert app.failure is None
     assert not [record for record in caplog.records if record.levelname == "ERROR"]
+
+
+@pytest.mark.asyncio
+async def test_successful_idle_schedule_refreshes_online_without_telemetry(monkeypatch):
+    backend = SDKBackend()
+    await make_app(monkeypatch, backend)._dispatch_invocation(payload(backend), None)
+    telemetry = deepcopy(backend.aggregates["tag_values"]["counter"])
+    history_count = len(backend.messages)
+    now = ANCHOR + 60_000
+    await make_app(monkeypatch, backend, now)._dispatch_invocation(
+        payload(backend), None
+    )
+    connection = backend.aggregates["doover_connection"]
+    assert connection["status"]["status"] == "ContinuousOnline"
+    assert connection["status"]["last_ping"] == now
+    assert connection["status"]["last_online"] == now
+    assert connection["config"]["connection_type"] == "Continuous"
+    assert connection["config"]["offline_after"] == 300
+    assert connection["config"]["auto_sync_offline"] is True
+    assert connection["determination"] == "Online"
+    assert backend.aggregates["tag_values"]["counter"] == telemetry
+    assert len(backend.messages) == history_count
+
+
+@pytest.mark.asyncio
+async def test_failed_playback_does_not_claim_online(monkeypatch):
+    backend = SDKBackend()
+    backend.fail_batches = True
+    await make_app(monkeypatch, backend)._dispatch_invocation(payload(backend), None)
+    assert "doover_connection" not in backend.aggregates

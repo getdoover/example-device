@@ -157,6 +157,28 @@ class ExampleDevice(Application):
             result = await runtime.run(
                 now_ms, observed=observed, force=presence_event and observed
             )
+            # Liveness follows successful processor checks, independently of the
+            # sparse telemetry cadence and the dataset's historical timestamps.
+            heartbeat_ms = int(time.time() * 1000)
+            await self.api.update_channel_aggregate(
+                "doover_connection",
+                {
+                    "config": {
+                        "connection_type": "Continuous",
+                        "offline_after": 300,
+                        "auto_sync_offline": True,
+                    },
+                    "status": {
+                        "status": "ContinuousOnline",
+                        "last_ping": heartbeat_ms,
+                        "last_online": heartbeat_ms,
+                        "user_agent": "example-device-manager",
+                    },
+                    "determination": "Online",
+                },
+                log_update=False,
+                suppress_response=True,
+            )
             return asdict(result)
         except Exception as error:
             self.failure = error

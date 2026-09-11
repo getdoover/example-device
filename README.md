@@ -10,6 +10,8 @@ Dataset timestamps are millisecond offsets from that fixed anchor. Negative offs
 
 The processor initializes aggregates, imports history in batches, and catches up to the current time. A one-minute schedule checks for work. Publication normally happens every 30 minutes. While the device page is being viewed, one-minute updates interpolate declared numeric tags without adding extra history. Other values change at authored points.
 
+Successful playback checks refresh the device's `doover_connection` heartbeat, even when no telemetry is due. Doover shows the example as online and marks it offline after five minutes without a heartbeat. This reflects processor availability; exhausted telemetry remains a separate playback state.
+
 Historical input events and their effects are precomputed. Live inputs update selected values, acknowledgements, and input logs without changing telemetry. Imported RPCs cannot execute as live commands. At the dataset's end, publication stops and the device shows `exhausted`; inputs can still be acknowledged.
 
 ## Data layout
@@ -48,4 +50,4 @@ Install the processor from `doover_config.json` with `repository`, `dataset_slug
 
 Use one Lambda function for all example devices with reserved concurrency **1** and `lambda:GetFunctionConcurrency` permission on that function. The processor checks this before cloud writes. Defaults subscribe to `ui_cmds` and `dv-ui-sub`, with a `rate(1 minute)` schedule. All devices share that capacity.
 
-Live deployment and organisation-provisioning integration still need verification in a dedicated example environment.
+Staging playback has been verified on a dedicated example device. Organisation-provisioning integration remains separate.
