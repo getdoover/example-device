@@ -1,0 +1,3 @@
+[
+{"timestamp":0,"kind":"aggregate","mode":"merge","data":{"applications":{"digital_matter_processor-1":{"dv_app_default_open":false,"dv_app_position":120,"hide_default_ui":false,"odometer_offset_km":0,"run_hours_offset":0},"maintenance_manager_1":{"average_use_period":14,"dv_app_position":100,"notification_alert_period":14,"service_interval_kms":10000,"service_interval_months":6,"tracker_app_key":"digital_matter_processor-1"}}}}
+]
