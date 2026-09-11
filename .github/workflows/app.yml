@@ -18,5 +18,6 @@ jobs:
       staging: true
       release: true
       python-version: '3.13'
+      test-image: python:3.13-bookworm
       lint-blocking: true
     secrets: inherit
