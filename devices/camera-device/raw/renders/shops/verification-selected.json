@@ -1,0 +1,41 @@
+{
+  "blend": "/Users/thomascrundwell/.t3/worktrees/example-device/t3code-fd80adcd/devices/camera-device/raw/qvb-camera-scene.blend",
+  "resolution": [
+    1440,
+    1080
+  ],
+  "samples": 64,
+  "purpose": "Separate storefront inspection cameras, not simulated CCTV output",
+  "renders": [
+    {
+      "shop": "crabtree-evelyn",
+      "file": "crabtree-evelyn.png",
+      "bytes": 2052765,
+      "position": [
+        -5.599999904632568,
+        -7.5,
+        1.899999976158142
+      ]
+    },
+    {
+      "shop": "tribeca",
+      "file": "tribeca.png",
+      "bytes": 2072640,
+      "position": [
+        5.599999904632568,
+        -12.5,
+        1.899999976158142
+      ]
+    },
+    {
+      "shop": "cashmere",
+      "file": "cashmere.png",
+      "bytes": 2146539,
+      "position": [
+        5.599999904632568,
+        7.5,
+        1.899999976158142
+      ]
+    }
+  ]
+}

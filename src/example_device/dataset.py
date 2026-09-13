@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import re
 from copy import deepcopy
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Literal
 
 
@@ -58,6 +59,26 @@ class MessageReference:
     id: str
 
 
+type DataPath = tuple[str | int, ...]
+
+
+@dataclass(frozen=True)
+class AttachmentFile:
+    path: str
+    filename: str
+    content_type: str
+    size: int
+    sha256: str
+
+
+@dataclass(frozen=True)
+class AttachmentReference:
+    path: DataPath
+    channel: str
+    id: str
+    filename: str
+
+
 @dataclass(frozen=True)
 class Entry:
     channel: str
@@ -71,6 +92,8 @@ class Entry:
     apply_to_aggregate: bool = False
     timestamp_fields: tuple[TimestampField, ...] = ()
     message_references: tuple[MessageReference, ...] = ()
+    attachments: tuple[AttachmentFile, ...] = ()
+    attachment_references: tuple[AttachmentReference, ...] = ()
 
     @property
     def timestamp_ms(self) -> int:
@@ -103,6 +126,12 @@ class Dataset:
 _KEY = re.compile(r"^[a-zA-Z][a-zA-Z0-9_-]{0,127}$")
 _SLUG = re.compile(r"^[a-z][a-z0-9-]{0,127}$")
 _ID = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$")
+_FILENAME = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}$")
+_SHA256 = re.compile(r"^[a-f0-9]{64}$")
+_MIME = re.compile(r"^[a-z0-9][a-z0-9!#$&^_.+-]*/[a-z0-9][a-z0-9!#$&^_.+-]*$")
+MAX_ATTACHMENT_BYTES = 8 * 1024 * 1024
+MAX_MESSAGE_ATTACHMENT_BYTES = 16 * 1024 * 1024
+MAX_ATTACHMENTS_PER_MESSAGE = 8
 _RUNTIME_KEYS = frozenset(
     {
         "AGENT_ID",
@@ -227,6 +256,79 @@ def _at(data: dict[str, Any], path: tuple[str, ...], where: str) -> Any:
             _fail(where, f"path {'.'.join(path)} does not exist in data")
         value = value[key]
     return value
+
+
+def _data_path(value: Any, where: str) -> DataPath:
+    parts = []
+    for part in _array(value, where):
+        parts.append(
+            _integer(part, where, 0) if type(part) is int else _string(part, where)
+        )
+    if not parts:
+        _fail(where, "path must not be empty")
+    return tuple(parts)
+
+
+def _data_at(data: dict[str, Any], path: DataPath, where: str) -> Any:
+    value: Any = data
+    for key in path:
+        if isinstance(value, dict) and isinstance(key, str) and key in value:
+            value = value[key]
+        elif isinstance(value, list) and type(key) is int and key < len(value):
+            value = value[key]
+        else:
+            _fail(where, f"path {path!r} does not exist in data")
+    return value
+
+
+def _attachment(raw: Any, where: str) -> AttachmentFile:
+    value = _object(raw, where)
+    _fields(value, {"path", "filename", "content_type", "size", "sha256"}, set(), where)
+    path = _string(value["path"], where)
+    parts = path.split("/")
+    if (
+        len(parts) < 2
+        or parts[0] != "attachments"
+        or any(not _FILENAME.fullmatch(part) or part in (".", "..") for part in parts)
+        or str(PurePosixPath(path)) != path
+    ):
+        _fail(
+            where,
+            "attachment path must stay under attachments/ with simple path components",
+        )
+    size = _integer(value["size"], where, 1)
+    if size > MAX_ATTACHMENT_BYTES:
+        _fail(where, "attachment exceeds the file size limit")
+    return AttachmentFile(
+        path,
+        _string(value["filename"], where, _FILENAME),
+        _string(value["content_type"], where, _MIME),
+        size,
+        _string(value["sha256"], where, _SHA256),
+    )
+
+
+def verify_attachment_bytes(attachment: AttachmentFile, raw: bytes) -> bytes:
+    """Verify downloaded or local bytes against the pinned dataset manifest."""
+    if (
+        len(raw) != attachment.size
+        or hashlib.sha256(raw).hexdigest() != attachment.sha256
+    ):
+        _fail(attachment.path, "attachment size or SHA-256 does not match its manifest")
+    return raw
+
+
+def read_local_attachment(directory: Path, attachment: AttachmentFile) -> bytes:
+    root = directory.resolve()
+    file = (root / attachment.path).resolve()
+    if not file.is_relative_to(root / "attachments"):
+        _fail(attachment.path, "attachment symlink escapes its directory")
+    try:
+        with file.open("rb") as stream:
+            raw = stream.read(attachment.size + 1)
+    except OSError as error:
+        raise DatasetError(f"{attachment.path}: {error}") from error
+    return verify_attachment_bytes(attachment, raw)
 
 
 def _matches_input(value: Any, value_type: str) -> bool:
@@ -406,11 +508,13 @@ def _entry(raw: Any, channel: str, index: int, config: DatasetConfig) -> Entry:
     raw = _object(raw, where)
     kind = raw.get("kind")
     common = {"timestamp", "kind", "data"}
-    extra = {"timestamp_fields", "message_references"}
+    extra = {"timestamp_fields", "message_references", "attachment_references"}
     if kind == "aggregate":
         _fields(raw, common | {"mode"}, extra | {"scope"}, where)
     elif kind == "message":
-        _fields(raw, common | {"id"}, extra | {"apply_to_aggregate"}, where)
+        _fields(
+            raw, common | {"id"}, extra | {"apply_to_aggregate", "attachments"}, where
+        )
     else:
         _fail(where, "kind must be aggregate or message")
     timestamp = _integer(raw["timestamp"], f"{where}.timestamp")
@@ -466,9 +570,45 @@ def _entry(raw: Any, channel: str, index: int, config: DatasetConfig) -> Entry:
                 _string(field["id"], where, _ID),
             )
         )
-    paths = [field.path for field in timestamps] + [field.path for field in references]
-    if len(set(paths)) != len(paths):
-        _fail(where, "timestamp and reference paths must be distinct")
+    attachments = tuple(
+        _attachment(value, where) for value in _array(raw.get("attachments", []), where)
+    )
+    if (
+        len(attachments) > MAX_ATTACHMENTS_PER_MESSAGE
+        or sum(file.size for file in attachments) > MAX_MESSAGE_ATTACHMENT_BYTES
+    ):
+        _fail(where, "message attachments exceed the upload limit")
+    if len({file.filename for file in attachments}) != len(attachments):
+        _fail(where, "attachment filenames must be unique within a message")
+    attachment_references = []
+    for value in _array(raw.get("attachment_references", []), where):
+        field = _object(value, where)
+        _fields(field, {"path", "channel", "id", "filename"}, set(), where)
+        path = _data_path(field["path"], where)
+        if _data_at(data, path, where) is not None:
+            _fail(where, "attachment reference placeholder must be null")
+        attachment_references.append(
+            AttachmentReference(
+                path,
+                _string(field["channel"], where, _KEY),
+                _string(field["id"], where, _ID),
+                _string(field["filename"], where, _FILENAME),
+            )
+        )
+    paths = (
+        [field.path for field in timestamps]
+        + [field.path for field in references]
+        + [field.path for field in attachment_references]
+    )
+    if any(
+        left == right[: len(left)]
+        for index, left in enumerate(paths)
+        for other, right in enumerate(paths)
+        if index != other
+    ):
+        _fail(
+            where, "timestamp and reference paths must be distinct and must not overlap"
+        )
     return Entry(
         channel,
         index,
@@ -481,6 +621,8 @@ def _entry(raw: Any, channel: str, index: int, config: DatasetConfig) -> Entry:
         apply,
         tuple(timestamps),
         tuple(references),
+        attachments,
+        tuple(attachment_references),
     )
 
 
@@ -518,6 +660,18 @@ def parse_dataset(config: Any, channels: Any) -> Dataset:
 
     for entries in result.values():
         for entry in entries:
+            for reference in entry.attachment_references:
+                target = identities.get((reference.channel, reference.id))
+                if (
+                    target is None
+                    or order(target) > order(entry)
+                    or reference.filename
+                    not in {file.filename for file in target.attachments}
+                ):
+                    _fail(
+                        entry.channel,
+                        "attachment reference must name a file on this or an earlier message",
+                    )
             for reference in entry.message_references:
                 target = identities.get((reference.channel, reference.id))
                 if target is None or order(target) >= order(entry):
@@ -528,7 +682,7 @@ def parse_dataset(config: Any, channels: Any) -> Dataset:
             if entry.channel == "tag_values":
                 timestamp_paths = {
                     entry.scope + field.path for field in entry.timestamp_fields
-                }
+                } | {entry.scope + field.path for field in entry.attachment_references}
                 if timestamp_paths & {rule.path for rule in parsed.interpolation}:
                     _fail(
                         "interpolation", "timestamp metadata must not be interpolated"
@@ -563,10 +717,18 @@ def load_directory(path: str | Path) -> Dataset:
             str(channel_directory),
             "JSON files must match the config channel list exactly",
         )
-    return parse_dataset(
+    result = parse_dataset(
         raw_config,
         {
             channel: _load_json(channel_directory / f"{channel}.json")
             for channel in config.channels
         },
     )
+    checked: set[AttachmentFile] = set()
+    for entries in result.channels.values():
+        for entry in entries:
+            for attachment in entry.attachments:
+                if attachment not in checked:
+                    read_local_attachment(directory, attachment)
+                    checked.add(attachment)
+    return result

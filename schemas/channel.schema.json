@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Portable example channel v1",
-  "$comment": "parse_dataset also checks timestamp order and endpoint, per-channel message identity, owned aggregate scopes, no future scripted inputs, valid earlier message references, declared numeric timestamp paths, and interpolation metadata exclusions. In data, null deletes an aggregate member but remains null in a message.",
+  "$comment": "parse_dataset also checks timestamp order and endpoint, per-channel message identity, owned aggregate scopes, no future scripted inputs, valid earlier message references, declared numeric timestamp paths, and interpolation metadata exclusions. In data, null deletes an aggregate member but remains null in a message. Attachment files are confined to attachments/, verified by SHA-256 and byte size, and referenced by filename on the same or an earlier message. URL placeholders must be null. Reference paths may address arrays with integer indices.",
   "type": "array",
   "items": {
     "oneOf": [
@@ -96,6 +96,12 @@
               "type": "string",
               "minLength": 1,
               "pattern": "^[^.]+$"
+            }
+          },
+          "attachment_references": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/attachmentReference"
             }
           }
         },
@@ -207,6 +213,19 @@
           },
           "apply_to_aggregate": {
             "type": "boolean"
+          },
+          "attachment_references": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/attachmentReference"
+            }
+          },
+          "attachments": {
+            "type": "array",
+            "maxItems": 8,
+            "items": {
+              "$ref": "#/$defs/attachmentFile"
+            }
           }
         },
         "required": [
@@ -275,6 +294,81 @@
           }
         }
       ]
+    },
+    "attachmentFile": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "pattern": "^attachments/([a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}/)*[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}$"
+        },
+        "filename": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}$"
+        },
+        "content_type": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9!#$&^_.+-]*/[a-z0-9][a-z0-9!#$&^_.+-]*$"
+        },
+        "size": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8388608
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "path",
+        "filename",
+        "content_type",
+        "size",
+        "sha256"
+      ],
+      "additionalProperties": false
+    },
+    "attachmentReference": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "oneOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
+            ]
+          }
+        },
+        "channel": {
+          "type": "string",
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,127}$"
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$"
+        },
+        "filename": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}$"
+        }
+      },
+      "required": [
+        "path",
+        "channel",
+        "id",
+        "filename"
+      ],
+      "additionalProperties": false
     }
   }
 }

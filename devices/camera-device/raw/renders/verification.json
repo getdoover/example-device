@@ -1,0 +1,91 @@
+{
+  "blend": "qvb-camera-scene.blend",
+  "blender": "5.2.1 LTS",
+  "resolution": [
+    1920,
+    1200
+  ],
+  "samples": 128,
+  "objects": 40821,
+  "packed_images": 9,
+  "missing_external_images": [],
+  "renders": [
+    {
+      "name": "01-clock-atrium",
+      "pan": -16,
+      "tilt": 10,
+      "lens": 20,
+      "file": "01-clock-atrium.png",
+      "bytes": 4035478,
+      "direction": [
+        -0.27144986391067505,
+        0.9466580152511597,
+        -0.17364802956581116
+      ],
+      "position": [
+        3.4000000953674316,
+        2.700000047683716,
+        3.549999952316284
+      ],
+      "sha256": "db2a77c4a84eb8f2432ad93769eee3236e6a3126b4458182926867f83fea71e7"
+    },
+    {
+      "name": "02-cafe-gallery",
+      "pan": 30,
+      "tilt": 30,
+      "lens": 20,
+      "file": "02-cafe-gallery.png",
+      "bytes": 3857635,
+      "direction": [
+        0.4330127239227295,
+        0.7500000596046448,
+        -0.5
+      ],
+      "position": [
+        3.4000000953674316,
+        2.700000047683716,
+        3.549999952316284
+      ],
+      "sha256": "d0cd2c2835d1d1f3d56c6f884da7e29260816afdf86319e7e3eccbab163d8c06"
+    },
+    {
+      "name": "03-opposite-shops",
+      "pan": -88,
+      "tilt": 17,
+      "lens": 25,
+      "file": "03-opposite-shops.png",
+      "bytes": 3410677,
+      "direction": [
+        -0.9557222127914429,
+        0.033374518156051636,
+        -0.2923716604709625
+      ],
+      "position": [
+        3.4000000953674316,
+        2.700000047683716,
+        3.549999952316284
+      ],
+      "sha256": "3f883ac9c9c9b11cd90864b6f7e7beda1c2fc766d3938bd2b921dcd6dde50379"
+    },
+    {
+      "name": "04-escalator",
+      "pan": -155,
+      "tilt": 5,
+      "lens": 21,
+      "file": "04-escalator.png",
+      "bytes": 3330517,
+      "direction": [
+        -0.4210101366043091,
+        -0.9028589725494385,
+        -0.08715586364269257
+      ],
+      "position": [
+        3.4000000953674316,
+        2.700000047683716,
+        3.549999952316284
+      ],
+      "sha256": "f4c2943909ec0193bc42e8f9c8bc9c64c7e2c9e6cf0049ab766bb48ae5f9821e"
+    }
+  ],
+  "blend_sha256": "1da2c221cab9ec0482bc853ee1c4c50572110d7376ca4a3ac6f68d8af2e8fe3a"
+}

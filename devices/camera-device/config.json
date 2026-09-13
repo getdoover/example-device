@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "slug": "camera-device",
+  "name": "QVB camera example",
+  "processor": {
+    "app_key": "example_device",
+    "application_name": "example_device"
+  },
+  "apps": [
+    {
+      "app_key": "doover_camera",
+      "application_name": "doover_camera",
+      "run": false,
+      "config": {
+        "camera_name": "QVB gallery camera",
+        "camera_type": "Dahua (PTZ)",
+        "control_enabled": false,
+        "camera_snapshot_config": {
+          "enabled": true,
+          "period": 3600,
+          "mode": "Image",
+          "duration": 1,
+          "fps": 1,
+          "native_h264": true,
+          "scale": "640:-1"
+        },
+        "dv_app_position": 100
+      }
+    }
+  ],
+  "channels": [
+    "doover_camera",
+    "ui_state",
+    "tag_values",
+    "ui_cmds",
+    "deployment_config"
+  ],
+  "duration_ms": 2592000000,
+  "interpolation": [],
+  "inputs": []
+}

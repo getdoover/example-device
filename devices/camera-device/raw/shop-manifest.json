@@ -1,0 +1,166 @@
+{
+  "pass": 2,
+  "reference_date": "January 2016",
+  "shops": [
+    {
+      "id": "old-vienna",
+      "name": "Old Vienna\nCoffee House",
+      "side": -1,
+      "bays": [
+        -17.5
+      ],
+      "kind": "cafe",
+      "refs": [
+        "15-old-vienna-coffee-house.png"
+      ]
+    },
+    {
+      "id": "crabtree-evelyn",
+      "name": "CRABTREE & EVELYN",
+      "side": -1,
+      "bays": [
+        -12.5,
+        -7.5
+      ],
+      "kind": "apothecary",
+      "refs": [
+        "03-crabtree-evelyn.png",
+        "15-old-vienna-coffee-house.png"
+      ]
+    },
+    {
+      "id": "via-condotti",
+      "name": "via Condotti",
+      "side": -1,
+      "bays": [
+        -2.5,
+        2.5
+      ],
+      "kind": "accessories",
+      "refs": [
+        "01-opposite-arcade.png",
+        "09-blooms-opposite-clock.png"
+      ]
+    },
+    {
+      "id": "blooms",
+      "name": "BLOOMS",
+      "side": -1,
+      "bays": [
+        7.5,
+        12.5
+      ],
+      "kind": "fashion",
+      "refs": [
+        "09-blooms-opposite-clock.png",
+        "10-blooms-display-detail.png"
+      ]
+    },
+    {
+      "id": "unresolved-clockward-fashion",
+      "name": "",
+      "side": -1,
+      "bays": [
+        17.5
+      ],
+      "kind": "fashion",
+      "refs": [
+        "10-blooms-display-detail.png"
+      ],
+      "confidence": "Visible fashion display; tenancy boundary/name unresolved"
+    },
+    {
+      "id": "george",
+      "name": "G e o r g e",
+      "side": 1,
+      "bays": [
+        -17.5
+      ],
+      "kind": "fashion",
+      "refs": [
+        "14-george-eveningwear.png"
+      ]
+    },
+    {
+      "id": "tribeca",
+      "name": "TRIBECA",
+      "side": 1,
+      "bays": [
+        -12.5
+      ],
+      "kind": "fashion",
+      "refs": [
+        "12-tribeca-dresses.png"
+      ]
+    },
+    {
+      "id": "volls",
+      "name": "Volls\nJewellery",
+      "side": 1,
+      "bays": [
+        -7.5
+      ],
+      "kind": "jewellery",
+      "refs": [
+        "13-volls-jewellery-confirmed.png"
+      ]
+    },
+    {
+      "id": "dominique",
+      "name": "Dominique's",
+      "side": 1,
+      "bays": [
+        -2.5,
+        2.5
+      ],
+      "kind": "shoes",
+      "refs": [
+        "05-dominique-interior.png",
+        "07-dominique-entry.png"
+      ]
+    },
+    {
+      "id": "cashmere",
+      "name": "QVB\nCashmere Collection",
+      "side": 1,
+      "bays": [
+        7.5
+      ],
+      "kind": "knitwear",
+      "refs": [
+        "06-clockward-neighbours.png",
+        "11-cashmere-window.png"
+      ]
+    },
+    {
+      "id": "gs-diamonds",
+      "name": "GS\nDIAMONDS",
+      "side": 1,
+      "bays": [
+        12.5,
+        17.5
+      ],
+      "kind": "jewellery",
+      "refs": [
+        "08-gs-diamonds.png"
+      ]
+    }
+  ],
+  "objects_per_shop": {
+    "volls": 447,
+    "gs-diamonds": 964,
+    "crabtree-evelyn": 1182,
+    "blooms": 416,
+    "tribeca": 312,
+    "george": 231,
+    "cashmere": 254,
+    "old-vienna": 165,
+    "unresolved-clockward-fashion": 200,
+    "dominique": 1015,
+    "via-condotti": 1014
+  },
+  "archived_placeholder_objects": 1528,
+  "shoe_geometry_checked": 224,
+  "unaffected_scene_signature": "db183d498c948840f494a778a7e58162970139669b1b25e71ebf08726491ba24",
+  "notes": "Identities, relative order and display types follow saved Street View captures. Dimensions, individual products, hidden interiors and outer bay widths remain estimated."
+}

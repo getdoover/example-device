@@ -1,0 +1,37 @@
+{
+  "units": "metres and degrees",
+  "mount": [
+    3.4,
+    2.7,
+    3.55
+  ],
+  "zero_pan": "+Y",
+  "positive_pan": "clockwise looking down",
+  "positive_tilt": "down",
+  "presets": [
+    {
+      "name": "01-clock-atrium",
+      "pan": -16,
+      "tilt": 10,
+      "lens": 20
+    },
+    {
+      "name": "02-cafe-gallery",
+      "pan": 30,
+      "tilt": 30,
+      "lens": 20
+    },
+    {
+      "name": "03-opposite-shops",
+      "pan": -88,
+      "tilt": 17,
+      "lens": 25
+    },
+    {
+      "name": "04-escalator",
+      "pan": -155,
+      "tilt": 5,
+      "lens": 21
+    }
+  ]
+}

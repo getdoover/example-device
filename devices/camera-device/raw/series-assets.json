@@ -1,0 +1,21 @@
+{
+  "master_sha256": "1da2c221cab9ec0482bc853ee1c4c50572110d7376ca4a3ac6f68d8af2e8fe3a",
+  "blend": "qvb-camera-series.blend",
+  "identity_count": 24,
+  "yaw_count": 8,
+  "elevation_degrees": [
+    0,
+    20,
+    40,
+    60
+  ],
+  "cell_pixels": [
+    80,
+    160
+  ],
+  "cell_metres": [
+    1.2,
+    2.4
+  ],
+  "foot_height_in_cell_metres": 0.18
+}

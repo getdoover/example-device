@@ -1,0 +1,10 @@
+[
+  {
+    "timestamp": 0,
+    "kind": "aggregate",
+    "mode": "merge",
+    "data": {
+      "doover_camera": {}
+    }
+  }
+]

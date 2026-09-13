@@ -1,0 +1,133 @@
+{
+  "blend": "/Users/thomascrundwell/.t3/worktrees/example-device/t3code-fd80adcd/devices/camera-device/raw/qvb-camera-scene.blend",
+  "resolution": [
+    1440,
+    1080
+  ],
+  "samples": 64,
+  "purpose": "Separate storefront inspection cameras, not simulated CCTV output",
+  "renders": [
+    {
+      "shop": "old-vienna",
+      "file": "old-vienna.png",
+      "bytes": 2029468,
+      "position": [
+        -5.599999904632568,
+        -17.5,
+        1.899999976158142
+      ],
+      "sha256": "bee0d3d5b18661172b9e37bb953c195f182f3efc4476f18d9a3e6b02c962466c"
+    },
+    {
+      "shop": "crabtree-evelyn",
+      "file": "crabtree-evelyn.png",
+      "bytes": 2052765,
+      "position": [
+        -5.599999904632568,
+        -7.5,
+        1.899999976158142
+      ],
+      "sha256": "0ec97c01a804cad647bd6f565be1ff7a413c36fbc7e18e04afc53633099ce169"
+    },
+    {
+      "shop": "via-condotti",
+      "file": "via-condotti.png",
+      "bytes": 2161351,
+      "position": [
+        -5.599999904632568,
+        2.5,
+        1.899999976158142
+      ],
+      "sha256": "2ee99c9b6e92ef5c5d12a7181d938ab45fbd4f9963cc0bc13b4289abaae078ff"
+    },
+    {
+      "shop": "blooms",
+      "file": "blooms.png",
+      "bytes": 2077796,
+      "position": [
+        -5.599999904632568,
+        7.5,
+        1.899999976158142
+      ],
+      "sha256": "9c4af06ff359a094ada9efc609788c4b8d21c8d13c9dd19cd4c0e1ad5697af83"
+    },
+    {
+      "shop": "unresolved-clockward-fashion",
+      "file": "unresolved-clockward-fashion.png",
+      "bytes": 2017136,
+      "position": [
+        -5.599999904632568,
+        17.5,
+        1.899999976158142
+      ],
+      "sha256": "c1e6fda5d5b0d40edcb60ea50b08af2d9cb9b9124b43a789ad22f2bbda61a140"
+    },
+    {
+      "shop": "george",
+      "file": "george.png",
+      "bytes": 2142642,
+      "position": [
+        5.599999904632568,
+        -17.5,
+        1.899999976158142
+      ],
+      "sha256": "55e2d5160c80c93428bd0079f118abaf40b6f537a3e18fc329edd7620dafe57c"
+    },
+    {
+      "shop": "tribeca",
+      "file": "tribeca.png",
+      "bytes": 2072640,
+      "position": [
+        5.599999904632568,
+        -12.5,
+        1.899999976158142
+      ],
+      "sha256": "45479fcaf72a1a105e5d97244ecc053a4cfc33343ad3ecf7c0131499ddfa651b"
+    },
+    {
+      "shop": "volls",
+      "file": "volls.png",
+      "bytes": 2045091,
+      "position": [
+        5.599999904632568,
+        -7.5,
+        1.899999976158142
+      ],
+      "sha256": "cbbc5d6b9657dd9acc1acc36224f28144ad615d763c7ffd810aed3503cfac8e1"
+    },
+    {
+      "shop": "dominique",
+      "file": "dominique.png",
+      "bytes": 2154244,
+      "position": [
+        5.599999904632568,
+        2.5,
+        1.899999976158142
+      ],
+      "sha256": "3c884960858f06551ce39ffd65da4d28bedf7bee71aa4f14eb4a9f809f2f4d9b"
+    },
+    {
+      "shop": "cashmere",
+      "file": "cashmere.png",
+      "bytes": 2146539,
+      "position": [
+        5.599999904632568,
+        7.5,
+        1.899999976158142
+      ],
+      "sha256": "47d615c216db7860a6c69ed36bc9dfd8dbfc37221d8b03637a43624142ace7a2"
+    },
+    {
+      "shop": "gs-diamonds",
+      "file": "gs-diamonds.png",
+      "bytes": 2044949,
+      "position": [
+        5.599999904632568,
+        17.5,
+        1.899999976158142
+      ],
+      "sha256": "2e51151b1fbadb4a19bb811f3605c2d49e9b086c5bb242525a2c3f9cf8b1965e"
+    }
+  ],
+  "artifact_check": "PNG dimensions, chunk CRCs, pixel stream length, bytes and hashes checked after selected shop rerenders."
+}

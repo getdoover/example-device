@@ -14,7 +14,7 @@ from .simulator import MemoryTransport
 
 async def simulate(path, anchor_ms, offset_ms, viewed):
     dataset = load_directory(path)
-    transport = MemoryTransport()
+    transport = MemoryTransport(Path(path))
     runtime = Runtime(
         dataset,
         transport,
@@ -32,6 +32,7 @@ async def simulate(path, anchor_ms, offset_ms, viewed):
         "dataset": dataset.config.slug,
         "phase": result.phase,
         "message_count": len(transport.messages),
+        "attachment_count": len(transport.attachments),
         "state": transport.state,
         "aggregates": transport.aggregates,
     }

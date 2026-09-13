@@ -3,20 +3,27 @@
 from __future__ import annotations
 
 import hashlib
+import time
 from bisect import bisect_right
 from contextlib import AbstractAsyncContextManager
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Protocol, Sequence
 
-from .dataset import Dataset, Entry
+from .dataset import AttachmentFile, DataPath, Dataset, Entry
 from .state import PlaybackState, StateError
-from .timeline import ordered_entries, rebase_data, reconstruct_aggregates
+from .timeline import (
+    ordered_entries,
+    rebase_data,
+    reconstruct_aggregates,
+    set_data_path,
+)
 
 if TYPE_CHECKING:
     from .commands import CommandRequest, CommandResult
 
 DOOVER_EPOCH_MS = 1_735_689_600_000
 IMPORT_MARKER = "_example_device"
+ATTACHMENT_MESSAGES_PER_BATCH = 5
 
 
 @dataclass(frozen=True)
@@ -25,6 +32,8 @@ class HistoryWrite:
     message_id: int
     timestamp_ms: int
     data: dict[str, Any]
+    attachments: tuple[AttachmentFile, ...] = ()
+    attachment_paths: tuple[DataPath, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -47,6 +56,10 @@ class Transport(Protocol):
         self, items: Sequence[HistoryWrite]
     ) -> Sequence[WriteResult]:
         """Reject an existing ID with different content; report every outcome."""
+        ...
+
+    async def ensure_attachments(self, item: HistoryWrite) -> dict[str, str]:
+        """Upload missing files to a stable message and return filename-to-URL bindings."""
         ...
 
     async def patch_aggregate(
@@ -104,8 +117,14 @@ class Runtime:
         idle_interval_ms: int = 1_800_000,
         active_interval_ms: int = 60_000,
         max_batches: int = 4,
+        invocation_budget_seconds: int = 180,
     ):
-        if idle_interval_ms <= 0 or active_interval_ms <= 0 or max_batches <= 0:
+        if (
+            idle_interval_ms <= 0
+            or active_interval_ms <= 0
+            or max_batches <= 0
+            or invocation_budget_seconds <= 0
+        ):
             raise ValueError("Runtime intervals and batch budget must be positive")
         self.dataset = dataset
         self.transport = transport
@@ -115,10 +134,17 @@ class Runtime:
         self.idle_interval_ms = idle_interval_ms
         self.active_interval_ms = active_interval_ms
         self.max_batches = max_batches
+        self.invocation_budget_seconds = invocation_budget_seconds
         self.entries = ordered_entries(dataset)
         self.offsets = tuple(entry.timestamp for entry in self.entries)
         self.ids: dict[tuple[str, str], str] = {}
         self._entry_ids: dict[tuple[str, int], int] = {}
+        self._messages = {
+            (entry.channel, entry.id): entry
+            for entry in self.entries
+            if entry.kind == "message"
+        }
+        self._attachment_bindings: dict[tuple[str, int], dict[str, str]] = {}
         used: set[int] = set()
         for entry in self.entries:
             if entry.kind != "message":
@@ -163,7 +189,7 @@ class Runtime:
             raise StateError("Stored commands are outside the pinned input contract")
         return state
 
-    def _write(self, entry: Entry) -> HistoryWrite:
+    def _base_write(self, entry: Entry) -> HistoryWrite:
         data = rebase_data(entry, self.anchor_ms, self.ids)
         data[IMPORT_MARKER] = {
             "origin": "dataset",
@@ -171,12 +197,54 @@ class Runtime:
             "revision": self.revision,
             "record_id": entry.id or str(entry.index),
         }
+        if entry.attachments:
+            data[IMPORT_MARKER]["attachments"] = [
+                {
+                    "filename": file.filename,
+                    "content_type": file.content_type,
+                    "size": file.size,
+                    "sha256": file.sha256,
+                }
+                for file in entry.attachments
+            ]
         return HistoryWrite(
             entry.channel,
             self._entry_ids[(entry.channel, entry.index)],
             self.anchor_ms + entry.timestamp,
             data,
+            entry.attachments,
+            tuple(field.path for field in entry.attachment_references),
         )
+
+    async def _attachment_urls(self, entry: Entry) -> dict[str, str]:
+        key = (entry.channel, entry.index)
+        if key not in self._attachment_bindings:
+            self._attachment_bindings[key] = await self.transport.ensure_attachments(
+                self._base_write(entry)
+            )
+        return self._attachment_bindings[key]
+
+    async def _resolve_attachments(self, entry: Entry, data: dict[str, Any]) -> None:
+        for reference in entry.attachment_references:
+            target = self._messages[(reference.channel, reference.id)]
+            urls = await self._attachment_urls(target)
+            set_data_path(data, reference.path, urls[reference.filename])
+
+    async def _write(self, entry: Entry) -> HistoryWrite:
+        item = self._base_write(entry)
+        await self._resolve_attachments(entry, item.data)
+        return item
+
+    def _history_batch_end(self, start: int, eligible_end: int) -> int:
+        """Checkpoint smaller groups when each record needs several network uploads."""
+        end = min(start + 50, eligible_end)
+        captures = 0
+        for index in range(start, end):
+            if self.entries[index].attachments:
+                captures += 1
+            if captures == ATTACHMENT_MESSAGES_PER_BATCH:
+                return index + 1
+        return end
 
     async def run(
         self, now_ms: int, observed: bool = False, force: bool = False
@@ -185,6 +253,7 @@ class Runtime:
 
         if now_ms < self.anchor_ms:
             raise ValueError("Cannot initialize playback before its fixed anchor")
+        deadline = time.monotonic() + self.invocation_budget_seconds
         async with self.transport.serialized():
             state = await self._read_state()
             await resume_pending_commands(self, state)
@@ -227,10 +296,16 @@ class Runtime:
             for _ in range(self.max_batches):
                 if state.cursor >= eligible_end:
                     break
-                batch_end = min(state.cursor + 50, eligible_end)
+                # This is a between-batch budget, not a cancellation deadline for
+                # requests already in progress. HTTP clients retain their timeouts.
+                if time.monotonic() >= deadline:
+                    return RunResult(state.phase, state.cursor, published, True, now_ms)
+                batch_end = self._history_batch_end(state.cursor, eligible_end)
                 entries = self.entries[state.cursor : batch_end]
                 writes = [
-                    self._write(entry) for entry in entries if entry.kind == "message"
+                    await self._write(entry)
+                    for entry in entries
+                    if entry.kind == "message"
                 ]
                 results = (
                     await self.transport.publish_messages(writes) if writes else ()
@@ -266,6 +341,8 @@ class Runtime:
             for _ in range(self.max_batches):
                 if state.aggregate_cursor >= eligible_end:
                     break
+                if time.monotonic() >= deadline:
+                    return RunResult(state.phase, state.cursor, published, True, now_ms)
                 aggregate_end = min(state.aggregate_cursor + 50, eligible_end)
                 for entry in self.entries[state.aggregate_cursor : aggregate_end]:
                     if entry.kind == "aggregate" or entry.apply_to_aggregate:
@@ -295,6 +372,7 @@ class Runtime:
 
     async def _apply_aggregate_entry(self, entry: Entry) -> None:
         data = rebase_data(entry, self.anchor_ms, self.ids)
+        await self._resolve_attachments(entry, data)
         for key in reversed(entry.scope):
             data = {key: data}
         replace = (".".join(entry.scope),) if entry.mode == "replace" else ()

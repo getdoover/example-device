@@ -6,10 +6,11 @@ import asyncio
 from contextlib import asynccontextmanager
 from copy import deepcopy
 from dataclasses import replace
+from types import SimpleNamespace
 
 import pytest
 
-from example_device.dataset import parse_dataset
+from example_device.dataset import AttachmentFile, parse_dataset
 from example_device.runtime import (
     DOOVER_EPOCH_MS,
     Runtime,
@@ -449,3 +450,51 @@ async def test_late_installation_bounds_aggregate_catchup_across_invocations():
     assert result.phase == "exhausted"
     assert len(transport.messages) == 120
     assert transport.aggregates["tag_values"]["counter"]["value"] == 120
+
+
+def attachment_history_dataset():
+    dataset = make_dataset(history_count=24)
+    file = AttachmentFile(
+        "attachments/frame.jpg", "frame.jpg", "image/jpeg", 10, "a" * 64
+    )
+    return replace(
+        dataset,
+        channels={
+            **dataset.channels,
+            "tag_values": tuple(
+                replace(entry, attachments=(file,))
+                if entry.kind == "message"
+                else entry
+                for entry in dataset.channels["tag_values"]
+            ),
+        },
+    )
+
+
+async def test_attachment_batches_checkpoint_at_most_five_captures():
+    transport = FakeTransport()
+    result = await make_runtime(
+        transport, attachment_history_dataset(), max_batches=2
+    ).run(ANCHOR)
+    assert result.needs_continuation and result.cursor == 10
+    assert [len(batch) for batch in transport.batches] == [5, 5]
+    assert transport.state["cursor"] == 10
+    while (
+        result := await make_runtime(
+            transport, attachment_history_dataset(), max_batches=2
+        ).run(ANCHOR)
+    ).needs_continuation:
+        pass
+    assert len(transport.messages) == 24 and result.phase == "active"
+
+
+async def test_invocation_budget_yields_after_confirmed_attachment_batch(monkeypatch):
+    from example_device import runtime
+
+    clock = iter([100, 100, 281])
+    monkeypatch.setattr(runtime, "time", SimpleNamespace(monotonic=lambda: next(clock)))
+    transport = FakeTransport()
+    result = await make_runtime(transport, attachment_history_dataset()).run(ANCHOR)
+    assert result.needs_continuation and result.cursor == 5
+    assert transport.state["cursor"] == 5
+    assert len(transport.messages) == 5
