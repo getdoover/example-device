@@ -1,0 +1,145 @@
+{
+  "journey_sha256": "bd5c3dd9c24e73452fe894b57fd786520f81322a18fd89773c355f9ff1c48d8e",
+  "source_start_utc": "2027-01-03T22:00:00+00:00",
+  "source_zero_utc": "2027-02-18T22:00:00+00:00",
+  "source_export_end_utc": "2027-03-20T22:00:00+00:00",
+  "history_days": 46,
+  "future_days": 30,
+  "cadence": [
+    {
+      "from_ms": -3974400000,
+      "until_ms": -604800000,
+      "interval_ms": 3600000,
+      "end_inclusive": false
+    },
+    {
+      "from_ms": -604800000,
+      "until_ms": 2592000000,
+      "interval_ms": 600000,
+      "end_inclusive": true
+    }
+  ],
+  "extra_samples": "Exact event starts and ends, deduplicated against regular ticks.",
+  "cutoff_note": "Export ends exactly 76 elapsed days after departure. Any remaining final parked accommodation stays in raw data only; its length is source_parked_tail_omitted_ms. All travel and all 334 visits are included.",
+  "source_parked_tail_omitted_ms": 5400000,
+  "counter_baseline": {
+    "odometer_km": 0,
+    "run_hours": 0
+  },
+  "counter_policy": "Integrate Google road step distances and durations, normalizing step distance totals to route totals. Ferry movement adds neither road odometer nor engine hours.",
+  "speed_policy": "Instantaneous GPS ground speed from the active navigation step; positive aboard the moving ferry with ignition off.",
+  "timestamp_policy": "device_time and maintenance dates are numeric millisecond offsets declared in timestamp_fields and rebound to the runtime anchor; source UTC dates stay in this raw review export.",
+  "interpolation_policy": "Hold each paired location/telemetry observation until the next sample. Numeric tag interpolation is disabled so ignition, location and counters stay on the same observation.",
+  "maintenance_policy": "Synthetic service at trip start, 10000 km and six source-calendar months, trailing 14-day use. No later service is invented; overdue kilometres remain negative. No engine-hour service interval is configured.",
+  "secondary_fields": "Deterministic simulator-style voltage, temperature and signal values. Analog input is unknown; altitude is omitted because the route is two-dimensional.",
+  "channels": {
+    "ui_state": {
+      "aggregate": 1
+    },
+    "tag_values": {
+      "message": 7007,
+      "aggregate": 1
+    },
+    "location": {
+      "message": 7007,
+      "aggregate": 1
+    },
+    "deployment_config": {
+      "aggregate": 1
+    }
+  },
+  "tracking_samples": 7007,
+  "sample_reasons": {
+    "regular_and_transition": 79,
+    "transition": 742,
+    "regular": 6186
+  },
+  "period_counts": {
+    "older_history": 1427,
+    "recent_history": 1085,
+    "zero": 1,
+    "future": 4494
+  },
+  "zero_snapshot": {
+    "offset_ms": 0,
+    "source_utc": "2027-02-18T22:00:00+00:00",
+    "event_id": "event-0617",
+    "event_kind": "overnight",
+    "location": {
+      "lat": -16.957005,
+      "long": 145.746404
+    },
+    "tags": {
+      "digital_matter_processor-1": {
+        "speed": 0.0,
+        "heading_degrees": 0.0,
+        "gps_accuracy": 6,
+        "ignition_on": false,
+        "run_hours": 166.805,
+        "odometer_km": 11748.651,
+        "system_voltage": 12.6,
+        "battery_voltage": 3.65,
+        "signal_strength": 60.8,
+        "device_temp": 21.5,
+        "analog_input_v": null,
+        "uplink_reason": "Parked overnight",
+        "device_time": 0
+      },
+      "maintenance_manager_1": {
+        "engine_hours": 166.805,
+        "machine_odometer": 11748.651,
+        "ave_hours_per_day": 3.899643,
+        "ave_kms_per_day": 286.733429,
+        "last_service_date": -3974400000,
+        "last_service_hours": 0,
+        "last_service_odometer": 0,
+        "kms_till_next_service": -1748.651,
+        "days_till_next_service": 135.041667,
+        "next_service_est": 0
+      }
+    },
+    "sample_reason": "regular"
+  },
+  "final_snapshot": {
+    "offset_ms": 2592000000,
+    "source_utc": "2027-03-20T22:00:00+00:00",
+    "event_id": "event-0821",
+    "event_kind": "overnight",
+    "location": {
+      "lat": -12.4789844,
+      "long": 130.9856173
+    },
+    "tags": {
+      "digital_matter_processor-1": {
+        "speed": 0.0,
+        "heading_degrees": 0.0,
+        "gps_accuracy": 6,
+        "ignition_on": false,
+        "run_hours": 317.744167,
+        "odometer_km": 25286.561,
+        "system_voltage": 12.6,
+        "battery_voltage": 3.65,
+        "signal_strength": 76.9,
+        "device_temp": 21.5,
+        "analog_input_v": null,
+        "uplink_reason": "Parked overnight",
+        "device_time": 2592000000
+      },
+      "maintenance_manager_1": {
+        "engine_hours": 317.744167,
+        "machine_odometer": 25286.561,
+        "ave_hours_per_day": 4.434226,
+        "ave_kms_per_day": 387.177643,
+        "last_service_date": -3974400000,
+        "last_service_hours": 0,
+        "last_service_odometer": 0,
+        "kms_till_next_service": -15286.561,
+        "days_till_next_service": 105.041667,
+        "next_service_est": 2592000000
+      }
+    },
+    "sample_reason": "regular"
+  },
+  "total_road_km": 25286.561,
+  "total_engine_hours": 317.74416666666644
+}

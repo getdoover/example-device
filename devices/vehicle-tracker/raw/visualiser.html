@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>The Bunnings lap · Vehicle tracker</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <link rel="stylesheet" href="./visualiser.css">
+  <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script defer src="./visualiser.js"></script>
+</head>
+<body>
+  <header class="masthead">
+    <div class="brand-mark" aria-hidden="true">↗</div>
+    <div><div class="eyebrow">VEHICLE TRACKER / AUSTRALIA</div><h1>The Bunnings lap</h1></div>
+    <span class="raw-tag" id="journey-status">Journey explorer</span>
+  </header>
+  <main class="workspace">
+    <aside class="sidebar" aria-label="Journey itinerary">
+      <div class="trip-intro">
+        <p class="kicker">One vehicle. Every store.</p>
+        <p class="intro-copy">Follow the road, the store visits, and each overnight stay.</p>
+        <p class="trip-dates" id="trip-dates"></p>
+        <div class="trip-stats" id="trip-stats" aria-label="Journey totals"></div>
+      </div>
+      <div class="itinerary-controls">
+        <label for="day">Explore the itinerary</label>
+        <div class="day-controls">
+          <button id="previous-day" class="icon-button" aria-label="Previous day" disabled>←</button>
+          <select id="day" disabled><option value="all">Whole journey</option></select>
+          <button id="next-day" class="icon-button" aria-label="Next day" disabled>→</button>
+        </div>
+        <div class="search-wrap"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="Find a store, town or stay…" aria-label="Search the itinerary" disabled></div>
+        <div class="view-summary" id="view-summary">Loading journey data…</div>
+        <div class="sample-controls" id="sample-controls" hidden>
+          <p id="sampling-summary"></p>
+          <label><input id="show-samples" type="checkbox"> Show exported tracking samples</label>
+          <button id="go-zero" type="button">Go to zero · 46 days in</button>
+        </div>
+      </div>
+      <div class="itinerary" id="itinerary" aria-label="Stops and travel"></div>
+      <footer class="sidebar-footer">All itinerary times are local to the stop.<br><span id="schedule-label">Loading the recorded schedule…</span><span id="ferry-schedule-label" hidden><br>Overnight ferry cabin · engine off aboard</span></footer>
+    </aside>
+    <section class="map-panel" aria-label="Journey map and playback">
+      <div id="map" aria-label="Route map"></div>
+      <div class="map-topbar">
+        <div class="legend"><span><i class="store-dot"></i>Store</span><span><i class="stay-dot"></i>Stay</span><span><i class="ferry-line"></i>Ferry</span></div>
+        <button id="fit-route" class="map-button" disabled>⌖ Fit route</button>
+      </div>
+      <div id="status" class="status-card" role="status"><span class="loading-dot"></span>Loading the journey…</div>
+      <article id="detail" class="detail-card" hidden aria-label="Selected stop">
+        <button id="close-detail" class="close-button" aria-label="Close stop details">×</button>
+        <div class="eyebrow" id="detail-kind"></div>
+        <h2 id="detail-name"></h2>
+        <p id="detail-address"></p>
+        <dl id="detail-facts"></dl>
+        <p id="detail-notes"></p>
+      </article>
+      <div class="playback" id="playback" hidden>
+        <div class="playback-heading"><div><span class="eyebrow" id="playback-day"></span><strong id="playback-title">Ready to explore</strong></div><span id="playback-time"></span></div>
+        <div class="playback-controls">
+          <button id="play" class="play-button" aria-label="Play journey">▶</button>
+          <div class="scrubber"><label class="sr-only" for="progress">Journey time</label><input id="progress" type="range" min="0" max="100000" value="0" step="1"><div class="range-labels"><span id="range-start"></span><span id="range-end"></span></div></div>
+          <label class="sr-only" for="speed">Playback speed</label><select id="speed"><option value="3600">1 hour / sec</option><option value="21600" selected>6 hours / sec</option><option value="86400">1 day / sec</option></select>
+        </div>
+        <div class="playback-footer"><label><input id="follow" type="checkbox"> Follow vehicle</label><span id="position-label">Actual route geometry · step timing</span></div>
+        <div class="sample-readout" id="sample-readout" hidden aria-live="polite"></div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

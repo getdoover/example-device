@@ -9,3 +9,19 @@ build/
 *.egg-info/
 /IMPLEMENTATION.local.md
 /package.zip
+
+# Finder metadata, at any depth.
+.DS_Store
+
+# Keep only the vehicle's finished route, itinerary and visualiser outputs.
+# API caches, catalogue research, reviews, old versions and audit tooling stay local.
+/devices/vehicle-tracker/raw/*
+!/devices/vehicle-tracker/raw/README.md
+!/devices/vehicle-tracker/raw/journey.json
+!/devices/vehicle-tracker/raw/itinerary.csv
+!/devices/vehicle-tracker/raw/daily-summary.csv
+!/devices/vehicle-tracker/raw/sampling-policy.json
+!/devices/vehicle-tracker/raw/tracking-samples.json
+!/devices/vehicle-tracker/raw/visualiser.html
+!/devices/vehicle-tracker/raw/visualiser.js
+!/devices/vehicle-tracker/raw/visualiser.css
