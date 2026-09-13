@@ -5,12 +5,15 @@ from __future__ import annotations
 import asyncio
 import copy
 import json
+from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager
 
 from pydoover.api import NotFoundError
-from pydoover.models.data import BatchMutationItem
+from pydoover.models.data import BatchMutationItem, File
 
+from .dataset import AttachmentFile, verify_attachment_bytes
 from .runtime import WriteResult
+from .timeline import set_data_path
 
 STATE_TAG = "playback_state"
 IMMUTABLE_FIELDS = frozenset(
@@ -32,7 +35,15 @@ class DooverTransport:
     """Only construct after verifying Lambda reserved concurrency equals one."""
 
     def __init__(
-        self, api, *, agent_id, app_key, app_keys, repository, serialization_verified
+        self,
+        api,
+        *,
+        agent_id,
+        app_key,
+        app_keys,
+        repository,
+        serialization_verified,
+        attachment_loader: Callable[[AttachmentFile], Awaitable[bytes]] | None = None,
     ):
         if serialization_verified is not True:
             raise ValueError(
@@ -45,6 +56,8 @@ class DooverTransport:
         self.app_key = app_key
         self.app_keys = frozenset(app_keys)
         self.repository = repository
+        self.attachment_loader = attachment_loader
+        self._attachment_messages = {}
         self._lock = asyncio.Lock()
 
     @asynccontextmanager
@@ -100,6 +113,27 @@ class DooverTransport:
         outcomes = []
         pending = []
         for item in items:
+            if item.attachments:
+                await self.ensure_attachments(item)
+                existing = self._attachment_messages[(item.channel, item.message_id)]
+                if existing.data != item.data:
+                    # The multipart upload has finished. Resolve its URL placeholders
+                    # with a repeatable JSON-only write before advancing the cursor.
+                    updated = await self.api.update_message(
+                        item.channel,
+                        item.message_id,
+                        item.data,
+                        replace_data=True,
+                        allow_invoking_channel=True,
+                        agent_id=self.agent_id,
+                    )
+                    if updated is None or updated.data != item.data:
+                        raise ValueError(
+                            "Attachment message finalization was not confirmed"
+                        )
+                    self._attachment_messages[(item.channel, item.message_id)] = updated
+                outcomes.append(WriteResult(item.message_id, True))
+                continue
             try:
                 existing = await self.api.fetch_message(
                     item.channel, item.message_id, agent_id=self.agent_id
@@ -140,6 +174,120 @@ class DooverTransport:
                 )
         by_id = {result.message_id: result for result in outcomes}
         return [by_id[item.message_id] for item in items]
+
+    def _check_attachment_message(self, item, message):
+        if (
+            message.id != item.message_id
+            or message.channel.agent_id != self.agent_id
+            or message.channel.name != item.channel
+        ):
+            raise ValueError("Attachment response targets a different message")
+        expected, actual = copy.deepcopy(item.data), copy.deepcopy(message.data)
+        try:
+            for path in item.attachment_paths:
+                set_data_path(expected, path, None)
+                set_data_path(actual, path, None)
+        except (KeyError, IndexError, TypeError) as error:
+            raise ValueError(
+                "Message identity collision in attachment placeholders"
+            ) from error
+        if actual != expected:
+            raise ValueError(
+                "Message identity collision; refusing to overwrite attachment history"
+            )
+        files = {file.filename: file for file in item.attachments}
+        urls = {}
+        for attachment in message.attachments:
+            file = files.get(attachment.filename)
+            if (
+                file is None
+                or attachment.filename in urls
+                or (
+                    attachment.size != file.size
+                    or attachment.content_type != file.content_type
+                )
+                or not isinstance(attachment.url, str)
+                or not attachment.url
+            ):
+                raise ValueError(
+                    "Stored attachment metadata differs from the pinned manifest"
+                )
+            urls[attachment.filename] = attachment.url
+        return urls
+
+    async def ensure_attachments(self, item):
+        """Resume native multipart uploads by inspecting the deterministic message."""
+        if self.attachment_loader is None:
+            raise ValueError("An attachment loader is required for this dataset")
+        key = item.channel, item.message_id
+        message = self._attachment_messages.get(key)
+        if message is None:
+            try:
+                message = await self.api.fetch_message(
+                    item.channel, item.message_id, agent_id=self.agent_id
+                )
+            except NotFoundError:
+                # ProcessorDataClient.create_message does not expose message_id in
+                # the pinned SDK. Reserve the historical ID with the batch API first.
+                response = await self.api.batch_create_messages(
+                    [
+                        BatchMutationItem(
+                            agent_id=self.agent_id,
+                            channel_name=item.channel,
+                            message_id=item.message_id,
+                            timestamp=item.timestamp_ms,
+                            data=item.data,
+                        )
+                    ]
+                )
+                if len(response.items) != 1:
+                    raise ValueError("Attachment message reservation was not confirmed")
+                result = response.items[0]
+                if (
+                    not result.success
+                    or result.agent_id != self.agent_id
+                    or result.channel_name != item.channel
+                    or result.message_id not in (None, item.message_id)
+                ):
+                    raise ValueError("Attachment message reservation failed")
+                message = await self.api.fetch_message(
+                    item.channel, item.message_id, agent_id=self.agent_id
+                )
+        urls = self._check_attachment_message(item, message)
+        missing = [file for file in item.attachments if file.filename not in urls]
+        if missing:
+            files = []
+            for file in missing:
+                raw = verify_attachment_bytes(file, await self.attachment_loader(file))
+                files.append(File(file.filename, file.content_type, file.size, raw))
+            # The SDK otherwise retries multipart PATCH blindly after a lost
+            # response, which can append duplicate files. A later invocation must
+            # GET the message before deciding whether another upload is necessary.
+            retries = self.api.max_retries
+            self.api.max_retries = 1
+            self._attachment_messages.pop(key, None)
+            try:
+                message = await self.api.update_message(
+                    item.channel,
+                    item.message_id,
+                    {},
+                    files=files,
+                    allow_invoking_channel=True,
+                    agent_id=self.agent_id,
+                )
+            finally:
+                self.api.max_retries = retries
+            if message is None:
+                raise ValueError(
+                    "Attachment upload response was empty; keep progress unchanged"
+                )
+            urls = self._check_attachment_message(item, message)
+        if set(urls) != {file.filename for file in item.attachments}:
+            raise ValueError(
+                "Attachment upload was incomplete; keep progress unchanged"
+            )
+        self._attachment_messages[key] = message
+        return urls
 
     def _validate_scope(self, channel, data, replace_paths):
         if channel in ("tag_values", "ui_cmds"):

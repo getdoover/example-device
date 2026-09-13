@@ -1,0 +1,98 @@
+{
+  "seconds": 46.563,
+  "gpu": true,
+  "renders": [
+    {
+      "kind": "background",
+      "preset": "01-clock-atrium",
+      "lighting": "day",
+      "seconds": 7.316
+    },
+    {
+      "kind": "background",
+      "preset": "02-cafe-gallery",
+      "lighting": "day",
+      "seconds": 2.46
+    },
+    {
+      "kind": "background",
+      "preset": "03-opposite-shops",
+      "lighting": "day",
+      "seconds": 2.177
+    },
+    {
+      "kind": "background",
+      "preset": "04-escalator",
+      "lighting": "day",
+      "seconds": 2.0
+    },
+    {
+      "kind": "background",
+      "preset": "01-clock-atrium",
+      "lighting": "dusk",
+      "seconds": 1.57
+    },
+    {
+      "kind": "background",
+      "preset": "02-cafe-gallery",
+      "lighting": "dusk",
+      "seconds": 1.76
+    },
+    {
+      "kind": "background",
+      "preset": "03-opposite-shops",
+      "lighting": "dusk",
+      "seconds": 1.931
+    },
+    {
+      "kind": "background",
+      "preset": "04-escalator",
+      "lighting": "dusk",
+      "seconds": 1.906
+    },
+    {
+      "kind": "background",
+      "preset": "01-clock-atrium",
+      "lighting": "night",
+      "seconds": 1.832
+    },
+    {
+      "kind": "background",
+      "preset": "02-cafe-gallery",
+      "lighting": "night",
+      "seconds": 1.667
+    },
+    {
+      "kind": "background",
+      "preset": "03-opposite-shops",
+      "lighting": "night",
+      "seconds": 1.826
+    },
+    {
+      "kind": "background",
+      "preset": "04-escalator",
+      "lighting": "night",
+      "seconds": 1.522
+    },
+    {
+      "kind": "people-atlas",
+      "elevation": 0,
+      "seconds": 3.848
+    },
+    {
+      "kind": "people-atlas",
+      "elevation": 20,
+      "seconds": 3.251
+    },
+    {
+      "kind": "people-atlas",
+      "elevation": 40,
+      "seconds": 2.307
+    },
+    {
+      "kind": "people-atlas",
+      "elevation": 60,
+      "seconds": 2.419
+    }
+  ]
+}

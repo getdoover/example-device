@@ -1,0 +1,189 @@
+{
+  "ground_z": -5.0,
+  "basement_z": -9.2,
+  "openings": [
+    [
+      0,
+      -12,
+      6.6,
+      16,
+      1.4
+    ],
+    [
+      0,
+      18,
+      6.6,
+      8,
+      1.4
+    ]
+  ],
+  "objects": 15221,
+  "tenants": [
+    {
+      "side": -1,
+      "y": -17.5,
+      "name": "COUNTRY ROAD",
+      "display": "fashion"
+    },
+    {
+      "side": -1,
+      "y": -12.5,
+      "name": "JIGSAW",
+      "display": "fashion"
+    },
+    {
+      "side": -1,
+      "y": -7.5,
+      "name": "DAVID LAWRENCE",
+      "display": "fashion"
+    },
+    {
+      "side": -1,
+      "y": -2.5,
+      "name": "COACH",
+      "display": "bags"
+    },
+    {
+      "side": -1,
+      "y": 2.5,
+      "name": "LONGCHAMP",
+      "display": "bags"
+    },
+    {
+      "side": -1,
+      "y": 7.5,
+      "name": "CUE",
+      "display": "fashion"
+    },
+    {
+      "side": -1,
+      "y": 12.5,
+      "name": "CUE",
+      "display": "fashion"
+    },
+    {
+      "side": -1,
+      "y": 17.5,
+      "name": null,
+      "display": "fashion"
+    },
+    {
+      "side": 1,
+      "y": -17.5,
+      "name": "KAREN MILLEN",
+      "display": "fashion"
+    },
+    {
+      "side": 1,
+      "y": -12.5,
+      "name": "KAREN MILLEN",
+      "display": "fashion"
+    },
+    {
+      "side": 1,
+      "y": -7.5,
+      "name": "SPORTSCRAFT",
+      "display": "fashion"
+    },
+    {
+      "side": 1,
+      "y": -2.5,
+      "name": "SPORTSCRAFT",
+      "display": "fashion"
+    },
+    {
+      "side": 1,
+      "y": 2.5,
+      "name": "MONDIAL",
+      "display": "jewellery"
+    },
+    {
+      "side": 1,
+      "y": 7.5,
+      "name": "OROTON",
+      "display": "bags"
+    },
+    {
+      "side": 1,
+      "y": 12.5,
+      "name": "OROTON",
+      "display": "bags"
+    },
+    {
+      "side": 1,
+      "y": 17.5,
+      "name": null,
+      "display": "fashion"
+    }
+  ],
+  "preserved_upper_scene_signature": "8626192d01311317558f2133be5ca8270b9bdc11a497ccbc3503fa86eceba0fe",
+  "floor_checks": [
+    {
+      "area": "escalator well",
+      "hit_object": "B1 central cream diamond.001",
+      "height": -9.199760437011719,
+      "expected": -9.2
+    },
+    {
+      "area": "clockward well",
+      "hit_object": "B1 tiled concourse",
+      "height": -9.200000762939453,
+      "expected": -9.2
+    },
+    {
+      "area": "cafe crossing",
+      "hit_object": "G transverse tile border.003",
+      "height": -4.999579906463623,
+      "expected": -5.0
+    },
+    {
+      "area": "side walkway",
+      "hit_object": "Mosaic circular border.12054",
+      "height": -4.9995598793029785,
+      "expected": -5.0
+    }
+  ],
+  "portal_checks": [
+    {
+      "end": -1,
+      "x": -5.5,
+      "hit_object": "G distant corridor wall",
+      "depth": 28.875
+    },
+    {
+      "end": -1,
+      "x": 0,
+      "hit_object": "G distant retail window.002",
+      "depth": 28.779998779296875
+    },
+    {
+      "end": -1,
+      "x": 5.5,
+      "hit_object": "G distant corridor wall",
+      "depth": 28.875
+    },
+    {
+      "end": 1,
+      "x": -5.5,
+      "hit_object": "G distant corridor wall.001",
+      "depth": 28.875
+    },
+    {
+      "end": 1,
+      "x": 0,
+      "hit_object": "G distant retail window.007",
+      "depth": 28.779998779296875
+    },
+    {
+      "end": 1,
+      "x": 5.5,
+      "hit_object": "G distant corridor wall.001",
+      "depth": 28.875
+    }
+  ],
+  "limitations": [
+    "Estimated bay widths, heights and opening extents; not a measured survey",
+    "Two far-end ground-floor tenant names unresolved",
+    "B1 continuation represents observed construction and merchandise, without inferred tenant labels"
+  ]
+}

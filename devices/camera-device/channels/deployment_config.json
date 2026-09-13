@@ -1,0 +1,26 @@
+[
+  {
+    "timestamp": 0,
+    "kind": "aggregate",
+    "mode": "merge",
+    "data": {
+      "applications": {
+        "doover_camera": {
+          "camera_name": "QVB gallery camera",
+          "camera_type": "Dahua (PTZ)",
+          "control_enabled": false,
+          "camera_snapshot_config": {
+            "enabled": true,
+            "period": 3600,
+            "mode": "Image",
+            "duration": 1,
+            "fps": 1,
+            "native_h264": true,
+            "scale": "640:-1"
+          },
+          "dv_app_position": 100
+        }
+      }
+    }
+  }
+]

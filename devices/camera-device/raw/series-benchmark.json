@@ -1,0 +1,1347 @@
+{
+  "version": 1,
+  "method": "Blender backgrounds and clothed 3D people atlases, world-space crowd positions and per-pixel depth occlusion",
+  "device": "camera-device",
+  "timezone": "Australia/Sydney",
+  "anchor": "Install-date local midnight",
+  "offsets": {
+    "first": -168,
+    "last_inclusive": 719,
+    "interval_hours": 1,
+    "history_days": 7,
+    "forward_days": 30
+  },
+  "time_semantics": "Elapsed hourly offsets anchored at install local midnight; visual local_hour is offset modulo 24, so a DST transition shifts displayed wall-clock hour",
+  "resolution": [
+    640,
+    400
+  ],
+  "jpeg_quality": 38,
+  "master_scene_sha256": "1da2c221cab9ec0482bc853ee1c4c50572110d7376ca4a3ac6f68d8af2e8fe3a",
+  "series_scene": "qvb-camera-series.blend",
+  "presets": [
+    {
+      "name": "01-clock-atrium",
+      "pan": -16,
+      "tilt": 10,
+      "lens": 20,
+      "matrix_world": [
+        [
+          0.9612616896629333,
+          -0.04786393791437149,
+          0.2714498043060303,
+          3.4000000953674316
+        ],
+        [
+          0.27563735842704773,
+          0.16692137718200684,
+          -0.9466579556465149,
+          2.700000047683716
+        ],
+        [
+          0.0,
+          0.9848077297210693,
+          0.17364822328090668,
+          3.549999952316284
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "projection": [
+        [
+          1.111111044883728,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.7777777910232544,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0006669759750366,
+          -0.10003334283828735
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0,
+          0.0
+        ]
+      ],
+      "resolution": [
+        640,
+        400
+      ]
+    },
+    {
+      "name": "02-cafe-gallery",
+      "pan": 30,
+      "tilt": 30,
+      "lens": 20,
+      "matrix_world": [
+        [
+          0.8660253882408142,
+          0.2499999850988388,
+          -0.4330127239227295,
+          3.4000000953674316
+        ],
+        [
+          -0.5,
+          0.4330126643180847,
+          -0.75,
+          2.700000047683716
+        ],
+        [
+          0.0,
+          0.866025447845459,
+          0.4999999701976776,
+          3.549999952316284
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "projection": [
+        [
+          1.111111044883728,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.7777777910232544,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0006669759750366,
+          -0.10003334283828735
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0,
+          0.0
+        ]
+      ],
+      "resolution": [
+        640,
+        400
+      ]
+    },
+    {
+      "name": "03-opposite-shops",
+      "pan": -88,
+      "tilt": 17,
+      "lens": 25,
+      "matrix_world": [
+        [
+          0.03489949554204941,
+          -0.29219356179237366,
+          0.9557222723960876,
+          3.4000000953674316
+        ],
+        [
+          0.9993908405303955,
+          0.010203623212873936,
+          -0.03337455540895462,
+          2.700000047683716
+        ],
+        [
+          0.0,
+          0.9563047885894775,
+          0.2923716604709625,
+          3.549999952316284
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "projection": [
+        [
+          1.3888888359069824,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          2.222222089767456,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0006669759750366,
+          -0.10003334283828735
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0,
+          0.0
+        ]
+      ],
+      "resolution": [
+        640,
+        400
+      ]
+    },
+    {
+      "name": "04-escalator",
+      "pan": -155,
+      "tilt": 5,
+      "lens": 21,
+      "matrix_world": [
+        [
+          -0.9063077569007874,
+          -0.036833640187978745,
+          0.4210101366043091,
+          3.4000000953674316
+        ],
+        [
+          0.4226183295249939,
+          -0.07898998260498047,
+          0.9028590321540833,
+          2.700000047683716
+        ],
+        [
+          0.0,
+          0.9961947202682495,
+          0.08715580403804779,
+          3.549999952316284
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "projection": [
+        [
+          1.1666665077209473,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.866666555404663,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0006669759750366,
+          -0.10003334283828735
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0,
+          0.0
+        ]
+      ],
+      "resolution": [
+        640,
+        400
+      ]
+    }
+  ],
+  "assumptions": [
+    "Thirty days after install is the synthetic month; one week before install",
+    "Overnight crowd represents security and cleaning staff",
+    "Crowds are resampled each hour, shared across all four simultaneous preset views",
+    "Billboard atlas approximation; no reflections of dynamic people or articulated tracking"
+  ],
+  "seconds": 0.075,
+  "hours": [
+    {
+      "offset_hours": 2,
+      "local_hour": 2,
+      "seed": 2016011451,
+      "lighting": "night",
+      "people_count": 6,
+      "people": [
+        {
+          "id": "person-2016011451-00",
+          "identity": 2,
+          "position": [
+            7.2938,
+            13.6747,
+            0
+          ],
+          "heading": 135.40413435893555,
+          "height_scale": 0.9845306423173702
+        },
+        {
+          "id": "person-2016011451-01",
+          "identity": 4,
+          "position": [
+            -7.273,
+            14.6451,
+            0
+          ],
+          "heading": 351.4131620406024,
+          "height_scale": 0.9802437779739019
+        },
+        {
+          "id": "person-2016011451-02",
+          "identity": 2,
+          "position": [
+            -6.9272,
+            1.513,
+            0
+          ],
+          "heading": 60.91394343377204,
+          "height_scale": 1.0041451544147892
+        },
+        {
+          "id": "person-2016011451-03",
+          "identity": 0,
+          "position": [
+            -7.1144,
+            -7.5293,
+            0
+          ],
+          "heading": 338.80829141740253,
+          "height_scale": 1.0608150290528782
+        },
+        {
+          "id": "person-2016011451-04",
+          "identity": 8,
+          "position": [
+            -6.8838,
+            11.9559,
+            0
+          ],
+          "heading": 216.11461548596546,
+          "height_scale": 0.9818230397407539
+        },
+        {
+          "id": "person-2016011451-05",
+          "identity": 0,
+          "position": [
+            6.9894,
+            -16.8355,
+            0
+          ],
+          "heading": 177.0214487707097,
+          "height_scale": 1.0811768045678354
+        }
+      ],
+      "images": [
+        {
+          "preset": "01-clock-atrium",
+          "path": "raw/series-preview/hour-0002-01-clock-atrium.jpg",
+          "pan": -16,
+          "tilt": 10,
+          "lens": 20,
+          "bytes": 20829,
+          "sha256": "183787a9f0429faacd0a42a655a1bcaac5d9bef120d54f572b25f0d9688da8ab",
+          "visible_people": 3
+        },
+        {
+          "preset": "02-cafe-gallery",
+          "path": "raw/series-preview/hour-0002-02-cafe-gallery.jpg",
+          "pan": 30,
+          "tilt": 30,
+          "lens": 20,
+          "bytes": 17057,
+          "sha256": "a91935e8395ac2750d94836e4e108212d29ea0024fa42cc8c73fd9c48efa357e",
+          "visible_people": 1
+        },
+        {
+          "preset": "03-opposite-shops",
+          "path": "raw/series-preview/hour-0002-03-opposite-shops.jpg",
+          "pan": -88,
+          "tilt": 17,
+          "lens": 25,
+          "bytes": 17012,
+          "sha256": "259265d4db1a80db2c1a56716f972fe5a1ddacf19ad35dc977b609a1507d5095",
+          "visible_people": 1
+        },
+        {
+          "preset": "04-escalator",
+          "path": "raw/series-preview/hour-0002-04-escalator.jpg",
+          "pan": -155,
+          "tilt": 5,
+          "lens": 21,
+          "bytes": 14279,
+          "sha256": "0a2fab5296a3d6b832b5748abaecd691bc63e1d0196bcb51b6daded813b55886",
+          "visible_people": 2
+        }
+      ]
+    },
+    {
+      "offset_hours": 12,
+      "local_hour": 12,
+      "seed": 2016011461,
+      "lighting": "day",
+      "people_count": 42,
+      "people": [
+        {
+          "id": "person-2016011461-00",
+          "identity": 16,
+          "position": [
+            7.3726,
+            15.186,
+            0
+          ],
+          "heading": 206.8107937278546,
+          "height_scale": 0.9174018435568292
+        },
+        {
+          "id": "person-2016011461-01",
+          "identity": 20,
+          "position": [
+            -7.0318,
+            15.3208,
+            0
+          ],
+          "heading": 137.85315250532213,
+          "height_scale": 1.0204637589582746
+        },
+        {
+          "id": "person-2016011461-02",
+          "identity": 23,
+          "position": [
+            -7.3207,
+            1.6645,
+            0
+          ],
+          "heading": 120.24555851968739,
+          "height_scale": 1.0660062708027824
+        },
+        {
+          "id": "person-2016011461-03",
+          "identity": 23,
+          "position": [
+            -6.9393,
+            -7.151,
+            0
+          ],
+          "heading": 233.94672251845705,
+          "height_scale": 1.04529312725496
+        },
+        {
+          "id": "person-2016011461-04",
+          "identity": 21,
+          "position": [
+            7.4837,
+            -4.0242,
+            0
+          ],
+          "heading": 45.75527798431648,
+          "height_scale": 1.0458260995379156
+        },
+        {
+          "id": "person-2016011461-05",
+          "identity": 7,
+          "position": [
+            7.3143,
+            10.2499,
+            4.3
+          ],
+          "heading": 178.67228729933828,
+          "height_scale": 0.9915253008665041
+        },
+        {
+          "id": "person-2016011461-06",
+          "identity": 18,
+          "position": [
+            -7.6912,
+            5.0727,
+            0
+          ],
+          "heading": 200.77805602663605,
+          "height_scale": 1.0512591417247026
+        },
+        {
+          "id": "person-2016011461-07",
+          "identity": 4,
+          "position": [
+            7.3036,
+            11.1144,
+            0
+          ],
+          "heading": 24.280264169488674,
+          "height_scale": 1.1054337273232102
+        },
+        {
+          "id": "person-2016011461-08",
+          "identity": 10,
+          "position": [
+            -7.5761,
+            -17.2356,
+            0
+          ],
+          "heading": 64.1148302460854,
+          "height_scale": 0.9446086759027846
+        },
+        {
+          "id": "person-2016011461-09",
+          "identity": 15,
+          "position": [
+            7.8538,
+            19.994,
+            0
+          ],
+          "heading": 141.87083249211977,
+          "height_scale": 1.0954582973362257
+        },
+        {
+          "id": "person-2016011461-10",
+          "identity": 14,
+          "position": [
+            6.7001,
+            -6.0361,
+            -5
+          ],
+          "heading": 169.97351383860803,
+          "height_scale": 1.086531152099315
+        },
+        {
+          "id": "person-2016011461-11",
+          "identity": 6,
+          "position": [
+            -4.1628,
+            -0.5335,
+            -5
+          ],
+          "heading": 308.7144444960883,
+          "height_scale": 0.988436763554449
+        },
+        {
+          "id": "person-2016011461-12",
+          "identity": 23,
+          "position": [
+            7.7549,
+            13.1667,
+            4.3
+          ],
+          "heading": 77.05310551928974,
+          "height_scale": 0.9238899519315205
+        },
+        {
+          "id": "person-2016011461-13",
+          "identity": 18,
+          "position": [
+            -6.9911,
+            18.5906,
+            0
+          ],
+          "heading": 27.766385093925834,
+          "height_scale": 1.069733261021508
+        },
+        {
+          "id": "person-2016011461-14",
+          "identity": 11,
+          "position": [
+            7.839,
+            -8.7199,
+            0
+          ],
+          "heading": 30.46730634850264,
+          "height_scale": 1.0719678928076466
+        },
+        {
+          "id": "person-2016011461-15",
+          "identity": 0,
+          "position": [
+            -4.8674,
+            -18.4467,
+            -5
+          ],
+          "heading": 244.3321747691756,
+          "height_scale": 0.9984080377353014
+        },
+        {
+          "id": "person-2016011461-16",
+          "identity": 13,
+          "position": [
+            -7.0494,
+            -1.2372,
+            0
+          ],
+          "heading": 284.24926927089285,
+          "height_scale": 1.0402875178293907
+        },
+        {
+          "id": "person-2016011461-17",
+          "identity": 12,
+          "position": [
+            -4.2362,
+            -0.8984,
+            0
+          ],
+          "heading": 173.735294289453,
+          "height_scale": 1.0214430365176728
+        },
+        {
+          "id": "person-2016011461-18",
+          "identity": 2,
+          "position": [
+            -5.2655,
+            10.9746,
+            -5
+          ],
+          "heading": 261.37164859912065,
+          "height_scale": 1.0661649470873302
+        },
+        {
+          "id": "person-2016011461-19",
+          "identity": 20,
+          "position": [
+            -3.4357,
+            -1.4023,
+            4.3
+          ],
+          "heading": 336.791240357366,
+          "height_scale": 1.1144067965557554
+        },
+        {
+          "id": "person-2016011461-20",
+          "identity": 11,
+          "position": [
+            -4.785,
+            -9.7238,
+            -5
+          ],
+          "heading": 127.03529897503323,
+          "height_scale": 1.0822477930230812
+        },
+        {
+          "id": "person-2016011461-21",
+          "identity": 13,
+          "position": [
+            -5.572,
+            3.9131,
+            -5
+          ],
+          "heading": 321.2167023736617,
+          "height_scale": 0.9340063027877411
+        },
+        {
+          "id": "person-2016011461-22",
+          "identity": 6,
+          "position": [
+            -7.1242,
+            7.5121,
+            0
+          ],
+          "heading": 342.3101815534547,
+          "height_scale": 1.0846380888636806
+        },
+        {
+          "id": "person-2016011461-23",
+          "identity": 2,
+          "position": [
+            -7.599,
+            -1.5544,
+            0
+          ],
+          "heading": 312.43347321268743,
+          "height_scale": 1.0528892304282182
+        },
+        {
+          "id": "person-2016011461-24",
+          "identity": 14,
+          "position": [
+            7.0008,
+            14.4924,
+            0
+          ],
+          "heading": 43.0326534492084,
+          "height_scale": 1.08064964285301
+        },
+        {
+          "id": "person-2016011461-25",
+          "identity": 3,
+          "position": [
+            -5.4571,
+            18.0998,
+            -5
+          ],
+          "heading": 274.4284712495292,
+          "height_scale": 1.111376711405074
+        },
+        {
+          "id": "person-2016011461-26",
+          "identity": 20,
+          "position": [
+            7.8923,
+            -18.9644,
+            4.3
+          ],
+          "heading": 167.95047389949863,
+          "height_scale": 0.9589045825511722
+        },
+        {
+          "id": "person-2016011461-27",
+          "identity": 19,
+          "position": [
+            4.6674,
+            -10.1643,
+            -5
+          ],
+          "heading": 166.56877223786003,
+          "height_scale": 0.999496446268767
+        },
+        {
+          "id": "person-2016011461-28",
+          "identity": 4,
+          "position": [
+            5.3874,
+            -8.5718,
+            -5
+          ],
+          "heading": 295.5812255749226,
+          "height_scale": 1.1108304744794157
+        },
+        {
+          "id": "person-2016011461-29",
+          "identity": 21,
+          "position": [
+            -4.9423,
+            5.0286,
+            -5
+          ],
+          "heading": 231.04027403853254,
+          "height_scale": 0.9810637956246734
+        },
+        {
+          "id": "person-2016011461-30",
+          "identity": 16,
+          "position": [
+            7.5365,
+            -14.057,
+            0
+          ],
+          "heading": 252.00172426490656,
+          "height_scale": 1.0416180290722725
+        },
+        {
+          "id": "person-2016011461-31",
+          "identity": 9,
+          "position": [
+            -7.5277,
+            -13.5732,
+            0
+          ],
+          "heading": 162.77206652752568,
+          "height_scale": 0.9692957941908655
+        },
+        {
+          "id": "person-2016011461-32",
+          "identity": 6,
+          "position": [
+            7.5182,
+            -3.0126,
+            0
+          ],
+          "heading": 53.78459054924126,
+          "height_scale": 1.1161269814072785
+        },
+        {
+          "id": "person-2016011461-33",
+          "identity": 13,
+          "position": [
+            7.0104,
+            -20.4118,
+            0
+          ],
+          "heading": 340.7389911040025,
+          "height_scale": 1.0994438607063233
+        },
+        {
+          "id": "person-2016011461-34",
+          "identity": 6,
+          "position": [
+            2.2931,
+            -1.8268,
+            0
+          ],
+          "heading": 222.04997126136556,
+          "height_scale": 1.0975777714133805
+        },
+        {
+          "id": "person-2016011461-35",
+          "identity": 8,
+          "position": [
+            -7.2187,
+            16.5012,
+            4.3
+          ],
+          "heading": 261.5400479492832,
+          "height_scale": 1.0625443330661342
+        },
+        {
+          "id": "person-2016011461-36",
+          "identity": 22,
+          "position": [
+            -5.3516,
+            6.125,
+            -5
+          ],
+          "heading": 275.71303571817754,
+          "height_scale": 1.0380651863788266
+        },
+        {
+          "id": "person-2016011461-37",
+          "identity": 18,
+          "position": [
+            2.3983,
+            -0.8112,
+            4.3
+          ],
+          "heading": 52.583848215365066,
+          "height_scale": 0.9950510988229162
+        },
+        {
+          "id": "person-2016011461-38",
+          "identity": 6,
+          "position": [
+            -7.8816,
+            14.6449,
+            0
+          ],
+          "heading": 72.08210452488119,
+          "height_scale": 0.9923242110904822
+        },
+        {
+          "id": "person-2016011461-39",
+          "identity": 22,
+          "position": [
+            -7.1874,
+            14.2795,
+            0
+          ],
+          "heading": 55.11988949033337,
+          "height_scale": 1.0168195894521816
+        },
+        {
+          "id": "person-2016011461-40",
+          "identity": 23,
+          "position": [
+            5.4744,
+            12.7804,
+            -5
+          ],
+          "heading": 89.82663209248629,
+          "height_scale": 1.0629010748859549
+        },
+        {
+          "id": "person-2016011461-41",
+          "identity": 1,
+          "position": [
+            -7.7412,
+            18.1826,
+            0
+          ],
+          "heading": 209.28807762429514,
+          "height_scale": 0.9303047378639222
+        }
+      ],
+      "images": [
+        {
+          "preset": "01-clock-atrium",
+          "path": "raw/series-preview/hour-0012-01-clock-atrium.jpg",
+          "pan": -16,
+          "tilt": 10,
+          "lens": 20,
+          "bytes": 31893,
+          "sha256": "4686ac0bc7d13eef6e0805c9cc3122ce72321c378c3ac6e674ee494d899bd4cd",
+          "visible_people": 13
+        },
+        {
+          "preset": "02-cafe-gallery",
+          "path": "raw/series-preview/hour-0012-02-cafe-gallery.jpg",
+          "pan": 30,
+          "tilt": 30,
+          "lens": 20,
+          "bytes": 26119,
+          "sha256": "cf7f177f1f4905caea2fe73aa153215995b799d4ceb4c93cb5cb58ab0cfc8a0c",
+          "visible_people": 5
+        },
+        {
+          "preset": "03-opposite-shops",
+          "path": "raw/series-preview/hour-0012-03-opposite-shops.jpg",
+          "pan": -88,
+          "tilt": 17,
+          "lens": 25,
+          "bytes": 22371,
+          "sha256": "b94da1447beb9c6958b4362c55ce7182b43342c2272cd5fc8b043a504b73bcc8",
+          "visible_people": 9
+        },
+        {
+          "preset": "04-escalator",
+          "path": "raw/series-preview/hour-0012-04-escalator.jpg",
+          "pan": -155,
+          "tilt": 5,
+          "lens": 21,
+          "bytes": 21283,
+          "sha256": "6f1a758fc8358661f2115222344c193c0c6218121c9aeeb6c57709e3fbbf8f69",
+          "visible_people": 9
+        }
+      ]
+    },
+    {
+      "offset_hours": 18,
+      "local_hour": 18,
+      "seed": 2016011467,
+      "lighting": "dusk",
+      "people_count": 35,
+      "people": [
+        {
+          "id": "person-2016011467-00",
+          "identity": 9,
+          "position": [
+            7.1565,
+            14.2011,
+            0
+          ],
+          "heading": 312.22441727257734,
+          "height_scale": 1.0976062986027877
+        },
+        {
+          "id": "person-2016011467-01",
+          "identity": 23,
+          "position": [
+            -7.0652,
+            16.5364,
+            0
+          ],
+          "heading": 210.15343848905547,
+          "height_scale": 0.9862439576171653
+        },
+        {
+          "id": "person-2016011467-02",
+          "identity": 22,
+          "position": [
+            -7.0125,
+            2.8349,
+            0
+          ],
+          "heading": 326.74982138789073,
+          "height_scale": 1.1036588591545828
+        },
+        {
+          "id": "person-2016011467-03",
+          "identity": 6,
+          "position": [
+            -6.8945,
+            -9.3599,
+            0
+          ],
+          "heading": 335.6157568371232,
+          "height_scale": 1.0128704868473561
+        },
+        {
+          "id": "person-2016011467-04",
+          "identity": 20,
+          "position": [
+            6.9659,
+            -10.5065,
+            0
+          ],
+          "heading": 37.06433469115024,
+          "height_scale": 0.9585905377670625
+        },
+        {
+          "id": "person-2016011467-05",
+          "identity": 16,
+          "position": [
+            1.3802,
+            -0.4519,
+            0
+          ],
+          "heading": 149.04347257210085,
+          "height_scale": 1.0335337970943155
+        },
+        {
+          "id": "person-2016011467-06",
+          "identity": 11,
+          "position": [
+            -5.6598,
+            -1.611,
+            -5
+          ],
+          "heading": 141.38437001915784,
+          "height_scale": 1.0733352585473703
+        },
+        {
+          "id": "person-2016011467-07",
+          "identity": 19,
+          "position": [
+            7.1148,
+            -4.7794,
+            0
+          ],
+          "heading": 294.81850848483475,
+          "height_scale": 0.9983295098508299
+        },
+        {
+          "id": "person-2016011467-08",
+          "identity": 0,
+          "position": [
+            7.8234,
+            1.9136,
+            0
+          ],
+          "heading": 204.98495724801106,
+          "height_scale": 0.93408486775513
+        },
+        {
+          "id": "person-2016011467-09",
+          "identity": 5,
+          "position": [
+            7.2438,
+            20.3928,
+            0
+          ],
+          "heading": 253.08668189363166,
+          "height_scale": 1.0570413019703064
+        },
+        {
+          "id": "person-2016011467-10",
+          "identity": 6,
+          "position": [
+            7.237,
+            -3.0952,
+            4.3
+          ],
+          "heading": 315.14586248202545,
+          "height_scale": 1.0037070681525675
+        },
+        {
+          "id": "person-2016011467-11",
+          "identity": 1,
+          "position": [
+            6.9016,
+            3.5834,
+            0
+          ],
+          "heading": 69.91286579868208,
+          "height_scale": 0.9999541093288686
+        },
+        {
+          "id": "person-2016011467-12",
+          "identity": 18,
+          "position": [
+            -7.1902,
+            -1.4322,
+            4.3
+          ],
+          "heading": 138.8338335335043,
+          "height_scale": 0.9521870147036948
+        },
+        {
+          "id": "person-2016011467-13",
+          "identity": 16,
+          "position": [
+            7.442,
+            -13.5718,
+            0
+          ],
+          "heading": 161.7483794737306,
+          "height_scale": 1.0894266414339269
+        },
+        {
+          "id": "person-2016011467-14",
+          "identity": 7,
+          "position": [
+            -7.3592,
+            10.2479,
+            0
+          ],
+          "heading": 63.375791850160155,
+          "height_scale": 1.0671896458293284
+        },
+        {
+          "id": "person-2016011467-15",
+          "identity": 4,
+          "position": [
+            3.0464,
+            -1.5444,
+            0
+          ],
+          "heading": 125.38059401620559,
+          "height_scale": 1.019127256188963
+        },
+        {
+          "id": "person-2016011467-16",
+          "identity": 17,
+          "position": [
+            7.4776,
+            15.2062,
+            0
+          ],
+          "heading": 61.10652377501943,
+          "height_scale": 1.0656401159852265
+        },
+        {
+          "id": "person-2016011467-17",
+          "identity": 10,
+          "position": [
+            -7.6515,
+            -2.8767,
+            0
+          ],
+          "heading": 96.36119364424047,
+          "height_scale": 1.0252166645199867
+        },
+        {
+          "id": "person-2016011467-18",
+          "identity": 17,
+          "position": [
+            7.3828,
+            -5.4194,
+            0
+          ],
+          "heading": 324.17267587985856,
+          "height_scale": 1.08189551733436
+        },
+        {
+          "id": "person-2016011467-19",
+          "identity": 20,
+          "position": [
+            6.2163,
+            -1.5909,
+            0
+          ],
+          "heading": 262.41060125548455,
+          "height_scale": 0.9900783464254621
+        },
+        {
+          "id": "person-2016011467-20",
+          "identity": 13,
+          "position": [
+            -6.8542,
+            3.7762,
+            4.3
+          ],
+          "heading": 6.8863966833351276,
+          "height_scale": 0.9727708563650214
+        },
+        {
+          "id": "person-2016011467-21",
+          "identity": 3,
+          "position": [
+            -7.3376,
+            6.3414,
+            0
+          ],
+          "heading": 270.33012796062013,
+          "height_scale": 0.9923157699238476
+        },
+        {
+          "id": "person-2016011467-22",
+          "identity": 1,
+          "position": [
+            -7.5592,
+            -3.9832,
+            0
+          ],
+          "heading": 351.70852961120323,
+          "height_scale": 0.9916226200115837
+        },
+        {
+          "id": "person-2016011467-23",
+          "identity": 6,
+          "position": [
+            4.3423,
+            -19.6945,
+            -5
+          ],
+          "heading": 159.95467339663242,
+          "height_scale": 0.9823263035281552
+        },
+        {
+          "id": "person-2016011467-24",
+          "identity": 0,
+          "position": [
+            5.4391,
+            13.2473,
+            -5
+          ],
+          "heading": 213.79323306681664,
+          "height_scale": 1.1013244411757561
+        },
+        {
+          "id": "person-2016011467-25",
+          "identity": 2,
+          "position": [
+            -7.0765,
+            -16.3922,
+            4.3
+          ],
+          "heading": 199.79607005444868,
+          "height_scale": 1.0183307301097724
+        },
+        {
+          "id": "person-2016011467-26",
+          "identity": 1,
+          "position": [
+            4.8092,
+            11.8689,
+            -5
+          ],
+          "heading": 3.0504655185457485,
+          "height_scale": 1.0310150570669683
+        },
+        {
+          "id": "person-2016011467-27",
+          "identity": 23,
+          "position": [
+            -7.7385,
+            12.3916,
+            0
+          ],
+          "heading": 124.40162996908018,
+          "height_scale": 0.9982315895327161
+        },
+        {
+          "id": "person-2016011467-28",
+          "identity": 9,
+          "position": [
+            -7.6732,
+            8.3446,
+            4.3
+          ],
+          "heading": 72.78877704692503,
+          "height_scale": 1.0445665474424446
+        },
+        {
+          "id": "person-2016011467-29",
+          "identity": 6,
+          "position": [
+            7.7122,
+            4.836,
+            0
+          ],
+          "heading": 298.410522272171,
+          "height_scale": 0.9540964230859087
+        },
+        {
+          "id": "person-2016011467-30",
+          "identity": 10,
+          "position": [
+            -1.8643,
+            -1.9291,
+            0
+          ],
+          "heading": 276.4434837772123,
+          "height_scale": 0.9591414636958928
+        },
+        {
+          "id": "person-2016011467-31",
+          "identity": 21,
+          "position": [
+            -6.6691,
+            -3.3898,
+            -5
+          ],
+          "heading": 218.5630810399821,
+          "height_scale": 0.9699220987358507
+        },
+        {
+          "id": "person-2016011467-32",
+          "identity": 14,
+          "position": [
+            6.064,
+            6.9289,
+            -5
+          ],
+          "heading": 309.70958768238046,
+          "height_scale": 1.0163206909079252
+        },
+        {
+          "id": "person-2016011467-33",
+          "identity": 16,
+          "position": [
+            -6.9159,
+            15.3676,
+            0
+          ],
+          "heading": 162.36853317517853,
+          "height_scale": 1.0268599153382496
+        },
+        {
+          "id": "person-2016011467-34",
+          "identity": 10,
+          "position": [
+            -2.437,
+            -1.1074,
+            0
+          ],
+          "heading": 359.96849854905696,
+          "height_scale": 1.1077577770116138
+        }
+      ],
+      "images": [
+        {
+          "preset": "01-clock-atrium",
+          "path": "raw/series-preview/hour-0018-01-clock-atrium.jpg",
+          "pan": -16,
+          "tilt": 10,
+          "lens": 20,
+          "bytes": 28393,
+          "sha256": "390dd56f7f888da0e8a2914039471ec461fb44611e421708df3d9a52818d0a30",
+          "visible_people": 9
+        },
+        {
+          "preset": "02-cafe-gallery",
+          "path": "raw/series-preview/hour-0018-02-cafe-gallery.jpg",
+          "pan": 30,
+          "tilt": 30,
+          "lens": 20,
+          "bytes": 23202,
+          "sha256": "2611a40b7f526967390b79dcb59097c2d658d9f1c111b06547fa79fa4822ed56",
+          "visible_people": 7
+        },
+        {
+          "preset": "03-opposite-shops",
+          "path": "raw/series-preview/hour-0018-03-opposite-shops.jpg",
+          "pan": -88,
+          "tilt": 17,
+          "lens": 25,
+          "bytes": 21253,
+          "sha256": "378b4eab8adfc7883d1e28ab146996dfb192fbc52e199783a2528823706753b1",
+          "visible_people": 7
+        },
+        {
+          "preset": "04-escalator",
+          "path": "raw/series-preview/hour-0018-04-escalator.jpg",
+          "pan": -155,
+          "tilt": 5,
+          "lens": 21,
+          "bytes": 19582,
+          "sha256": "1f53aefcab67392f41e6c14ac4d9b25b34f99eda755e860a7ebdfbf450ad6c84",
+          "visible_people": 10
+        }
+      ]
+    }
+  ]
+}

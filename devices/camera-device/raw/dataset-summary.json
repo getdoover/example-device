@@ -1,0 +1,10 @@
+{
+  "dataset": "camera-device",
+  "captures": 888,
+  "images": 3552,
+  "image_bytes": 76971119,
+  "first_hour": -168,
+  "last_hour": 719,
+  "history_hours": 168,
+  "future_hours": 720
+}

@@ -1,0 +1,56 @@
+[
+  {
+    "timestamp": 0,
+    "kind": "aggregate",
+    "mode": "merge",
+    "data": {
+      "state": {
+        "children": {
+          "doover_camera": {
+            "name": "doover_camera",
+            "type": "uiApplication",
+            "displayString": "QVB gallery camera",
+            "hidden": false,
+            "position": 100,
+            "defaultOpen": true,
+            "fullWidth": true,
+            "children": {
+              "example_notice": {
+                "name": "example_notice",
+                "type": "uiVariable",
+                "displayString": "Example camera",
+                "hidden": false,
+                "position": 1,
+                "showActivity": false,
+                "varType": "string",
+                "notGraphable": true,
+                "currentValue": "Simulated QVB snapshots, captured hourly across four views. Choose a view and time in History. Get Now and live controls are unavailable in this example."
+              },
+              "history": {
+                "name": "history",
+                "type": "uiCameraHistory",
+                "displayString": "History",
+                "hidden": false,
+                "position": 10,
+                "showActivity": true,
+                "cameraName": "doover_camera",
+                "presets": [],
+                "ptzControl": true
+              },
+              "last_capture": {
+                "name": "last_capture",
+                "type": "uiTimestamp",
+                "displayString": "Last capture",
+                "hidden": false,
+                "position": 20,
+                "showActivity": true,
+                "varType": "timestamp",
+                "currentValue": "$tag.app().last_capture_ms:number:null"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+]

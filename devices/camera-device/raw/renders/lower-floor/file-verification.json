@@ -1,0 +1,29 @@
+[
+  {
+    "file": "renders/lower-floor/01-ground-arcade.png",
+    "sha256": "29aab95fb2859e3c4ce0524d2a6f2a8bf326ac8c33825d169487ee561a21d69e",
+    "resolution": [
+      1600,
+      1200
+    ],
+    "bytes": 2999633
+  },
+  {
+    "file": "renders/lower-floor/02-cafe-and-mosaic.png",
+    "sha256": "2a4c8282bcfe8885de3a36be485671dd7e09d7472f81f63105920c404d60bfd1",
+    "resolution": [
+      1600,
+      1200
+    ],
+    "bytes": 3139488
+  },
+  {
+    "file": "renders/lower-floor/03-camera-looking-down.png",
+    "sha256": "ba0cbbb3228881682f61f5cf2bd8037f0c20ff8b04b08dabdfc15953800d20bb",
+    "resolution": [
+      1600,
+      1200
+    ],
+    "bytes": 3329271
+  }
+]

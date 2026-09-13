@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import time
 from dataclasses import asdict
+from functools import partial
 
 from pydoover.models import AggregateUpdateEvent, MessageCreateEvent
 from pydoover.processor import Application, ProcessorSkipped, run_app
@@ -16,7 +17,7 @@ from .commands import CommandError, CommandRequest
 from .concurrency import verify_lambda_serialization
 from .config import ExampleDeviceConfig
 from .runtime import IMPORT_MARKER, Runtime
-from .source import fetch_dataset, validate_source
+from .source import fetch_attachment, fetch_dataset, validate_source
 from .state import PlaybackState
 
 
@@ -135,6 +136,7 @@ class ExampleDevice(Application):
             app_keys=[app.app_key for app in dataset.config.apps],
             repository=repository,
             serialization_verified=self.serialization_verified,
+            attachment_loader=partial(fetch_attachment, repository, revision, slug),
         )
         runtime = Runtime(
             dataset,

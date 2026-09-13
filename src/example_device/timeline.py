@@ -5,7 +5,15 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Any
 
-from .dataset import Dataset, Entry
+from .dataset import DataPath, Dataset, Entry
+
+
+def set_data_path(data: dict[str, Any], path: DataPath, value: Any) -> None:
+    """Replace a validated leaf, including leaves inside arrays of UI operations."""
+    node: Any = data
+    for key in path[:-1]:
+        node = node[key]
+    node[path[-1]] = deepcopy(value)
 
 
 def ordered_entries(
