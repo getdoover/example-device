@@ -1,6 +1,6 @@
 # Example devices
 
-Datasets and a Doover processor that imports example-device history and publishes new data over time. The [water-storage example](devices/water-storage/config.json) contains synthetic telemetry for a 10 ML storage and a 12 V solar system.
+Datasets and a Doover processor that imports example-device history and publishes new data over time. The [water-storage example](devices/water-storage/config.json) contains synthetic telemetry for a 10 ML storage and a 12 V solar system. The [vehicle-tracker example](devices/vehicle-tracker/README.md) follows a Bunnings journey with 46 days of history, 30 future days, and a local route visualiser.
 
 The [camera-device example](devices/camera-device/README.md) contains a Blender reconstruction of a Queen Victoria Building gallery and 3,552 compressed snapshots. Four pan-tilt views repeat hourly across seven days of history and 30 days after installation, with changing people and lighting. Playback publishes native camera attachments; a live stream remains separate work.
 
@@ -24,12 +24,15 @@ Each `devices/<slug>/` contains `config.json` and `channels/<channel>.json`. Cha
 | --- | --- |
 | `ui_state` | Static app UI schemas. |
 | `tag_values` | Telemetry history, zero-time baseline, and future samples. |
+| `location` | Paired GPS history, zero-time position, and future tracking samples for the vehicle. |
 | `ui_cmds` | Historical RPCs, input logs, and initial selections. |
 | `deployment_config` | Portable app settings, preserving installed identities. |
 | `ui_overrides` | Optional presentation overrides. |
 | `doover_camera` | Hourly camera captures with four named JPEG attachments. |
 
 The water example covers 90 past days and 30 future days. Historical spacing is 30 minutes within 14 days, two hours from 14–45 days, and six hours from 45–90 days, with extra points around input events. Future samples are 30 minutes apart with no scripted inputs. Host Configurator and customer installation bindings are excluded.
+
+The vehicle example samples hourly before the past week and every 10 minutes from the past week through day +30. Arrival and departure samples preserve ignition changes and short trips. Odometer and engine hours integrate the full road route. Ferry movement adds neither. GPS and telemetry remain on the same recorded observation between samples.
 
 Messages can declare `attachments` with a dataset-relative `path` under `attachments/`, `filename`, `content_type`, byte `size`, and `sha256`. The processor downloads files from the pinned GitHub revision only when their message is due, verifies their bytes, reserves a backdated message, and uploads missing native attachments. Retries inspect stored files before uploading again. Attachment data stays outside the Lambda package.
 
@@ -48,6 +51,8 @@ uv run example-device simulate devices/water-storage --anchor-ms 1789084800000 -
 uv run python tools/generate_water_storage.py
 uv run example-device validate devices/camera-device
 uv run python tools/generate_camera_device.py
+uv run python tools/generate_vehicle_tracker.py
+uv run example-device validate devices/vehicle-tracker
 uv run pytest -q
 ```
 

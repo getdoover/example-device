@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "slug": "vehicle-tracker",
+  "name": "Bunnings vehicle tracker example",
+  "processor": {
+    "app_key": "example_device",
+    "application_name": "example_device"
+  },
+  "apps": [
+    {
+      "app_key": "digital_matter_processor-1",
+      "application_name": "digital_matter_processor",
+      "run": false,
+      "config": {
+        "dv_app_default_open": false,
+        "dv_app_position": 120,
+        "hide_default_ui": false,
+        "odometer_offset_km": 0,
+        "run_hours_offset": 0
+      }
+    },
+    {
+      "app_key": "maintenance_manager_1",
+      "application_name": "maintenance_manager",
+      "run": false,
+      "config": {
+        "average_use_period": 14,
+        "dv_app_position": 100,
+        "notification_alert_period": 14,
+        "service_interval_kms": 10000,
+        "service_interval_months": 6,
+        "tracker_app_key": "digital_matter_processor-1"
+      }
+    }
+  ],
+  "channels": [
+    "ui_state",
+    "tag_values",
+    "location",
+    "deployment_config"
+  ],
+  "duration_ms": 2592000000,
+  "interpolation": [],
+  "inputs": []
+}

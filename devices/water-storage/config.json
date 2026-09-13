@@ -59,7 +59,8 @@
     "ui_state",
     "tag_values",
     "ui_cmds",
-    "deployment_config"
+    "deployment_config",
+    "ui_overrides"
   ],
   "duration_ms": 2592000000,
   "interpolation": [
