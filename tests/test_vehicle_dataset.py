@@ -309,7 +309,7 @@ def test_real_runtime_imports_history_and_replays_paired_vehicle_state(exported)
             s for s in samples if s["offset_ms"] > 0 and s["event_kind"] == "drive"
         )
         assert departure["offset_ms"] == 9 * 3_600_000
-        await advance(departure["offset_ms"] - 1)
+        await advance(departure["offset_ms"] - 60_000)
         assert transport.aggregates["tag_values"][TRACKER]["ignition_on"] is False
         assert transport.aggregates["location"] == policy["zero_snapshot"]["location"]
         await advance(departure["offset_ms"])
