@@ -13,6 +13,14 @@ from mathutils import Matrix, Vector
 ROOT = Path(__file__).resolve().parent
 OUT = ROOT / "series-cache"
 OUT.mkdir(exist_ok=True)
+assets = json.loads((ROOT / "series-assets.json").read_text())
+assets.update(
+    cell_pixels=[240, 480],
+    background_resolution=[1920, 1200],
+    atlas_resolution=[1920, 11520],
+    background_cycles_samples=16,
+    atlas_cycles_samples=12,
+)
 parser = argparse.ArgumentParser()
 parser.add_argument("--backgrounds-only", action="store_true")
 parser.add_argument("--atlases-only", action="store_true")
@@ -41,8 +49,8 @@ if not args.atlases_only:
     scene.cycles.use_denoising = True
     scene.cycles.use_light_tree = True
     scene.render.use_persistent_data = True
-    scene.render.resolution_x = 640
-    scene.render.resolution_y = 400
+    scene.render.resolution_x = 1920
+    scene.render.resolution_y = 1200
     scene.render.resolution_percentage = 100
     scene.render.image_settings.file_format = "PNG"
     scene.render.image_settings.color_mode = "RGB"
@@ -105,26 +113,26 @@ if not args.atlases_only:
                 deps = bpy.context.evaluated_depsgraph_get()
                 evaluated = camera.evaluated_get(deps)
                 projection = camera.calc_matrix_camera(
-                    deps, x=640, y=400, scale_x=1, scale_y=1
+                    deps, x=1920, y=1200, scale_x=1, scale_y=1
                 )
                 views[name] = dict(
                     p,
                     matrix_world=[list(row) for row in evaluated.matrix_world],
                     projection=[list(row) for row in projection],
-                    resolution=[640, 400],
+                    resolution=[1920, 1200],
                 )
                 files = list(OUT.glob(name + "-depth*.exr"))
                 assert len(files) == 1, files
                 # Independent geometry evidence for Z-pass conversion/occlusion.
                 world_matrix = evaluated.matrix_world
                 origin = world_matrix.translation
-                for x, y in [(320, 300), (180, 340), (460, 280), (320, 220)]:
+                for x, y in [(960, 900), (540, 1020), (1380, 840), (960, 660)]:
                     direction = (
                         world_matrix.to_3x3()
                         @ Vector(
                             (
-                                (2 * (x + 0.5) / 640 - 1) / projection[0][0],
-                                (1 - 2 * (y + 0.5) / 400) / projection[1][1],
+                                (2 * (x + 0.5) / 1920 - 1) / projection[0][0],
+                                (1 - 2 * (y + 0.5) / 1200) / projection[1][1],
                                 -1,
                             )
                         )
@@ -148,6 +156,9 @@ if not args.atlases_only:
 
 if not args.backgrounds_only:
     scene = bpy.data.scenes["Series People Atlas"]
+    scene.cycles.samples = 12
+    scene.render.resolution_x = 1920
+    scene.render.resolution_y = 11520
     bpy.context.window.scene = scene
     scene.cycles.device = "GPU" if gpu else "CPU"
     scene.render.use_persistent_data = True
@@ -178,3 +189,4 @@ if not args.backgrounds_only:
     + "\n"
 )
 print("SERIES_ASSETS_READY", round(time.monotonic() - started, 3), flush=True)
+(ROOT / "series-assets.json").write_text(json.dumps(assets, indent=2) + "\n")

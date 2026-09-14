@@ -1,98 +1,98 @@
 {
-  "seconds": 46.563,
+  "seconds": 189.741,
   "gpu": true,
   "renders": [
     {
       "kind": "background",
       "preset": "01-clock-atrium",
       "lighting": "day",
-      "seconds": 7.316
+      "seconds": 12.24
     },
     {
       "kind": "background",
       "preset": "02-cafe-gallery",
       "lighting": "day",
-      "seconds": 2.46
+      "seconds": 7.885
     },
     {
       "kind": "background",
       "preset": "03-opposite-shops",
       "lighting": "day",
-      "seconds": 2.177
+      "seconds": 7.66
     },
     {
       "kind": "background",
       "preset": "04-escalator",
       "lighting": "day",
-      "seconds": 2.0
+      "seconds": 7.515
     },
     {
       "kind": "background",
       "preset": "01-clock-atrium",
       "lighting": "dusk",
-      "seconds": 1.57
+      "seconds": 7.798
     },
     {
       "kind": "background",
       "preset": "02-cafe-gallery",
       "lighting": "dusk",
-      "seconds": 1.76
+      "seconds": 7.178
     },
     {
       "kind": "background",
       "preset": "03-opposite-shops",
       "lighting": "dusk",
-      "seconds": 1.931
+      "seconds": 7.62
     },
     {
       "kind": "background",
       "preset": "04-escalator",
       "lighting": "dusk",
-      "seconds": 1.906
+      "seconds": 7.502
     },
     {
       "kind": "background",
       "preset": "01-clock-atrium",
       "lighting": "night",
-      "seconds": 1.832
+      "seconds": 7.761
     },
     {
       "kind": "background",
       "preset": "02-cafe-gallery",
       "lighting": "night",
-      "seconds": 1.667
+      "seconds": 8.254
     },
     {
       "kind": "background",
       "preset": "03-opposite-shops",
       "lighting": "night",
-      "seconds": 1.826
+      "seconds": 7.923
     },
     {
       "kind": "background",
       "preset": "04-escalator",
       "lighting": "night",
-      "seconds": 1.522
+      "seconds": 8.053
     },
     {
       "kind": "people-atlas",
       "elevation": 0,
-      "seconds": 3.848
+      "seconds": 22.788
     },
     {
       "kind": "people-atlas",
       "elevation": 20,
-      "seconds": 3.251
+      "seconds": 20.712
     },
     {
       "kind": "people-atlas",
       "elevation": 40,
-      "seconds": 2.307
+      "seconds": 20.646
     },
     {
       "kind": "people-atlas",
       "elevation": 60,
-      "seconds": 2.419
+      "seconds": 21.484
     }
   ]
 }

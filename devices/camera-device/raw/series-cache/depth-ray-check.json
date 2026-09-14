@@ -2,209 +2,193 @@
   {
     "preset": "01-clock-atrium",
     "pixel": [
-      320,
-      300
+      960,
+      900
     ],
     "hit": true,
-    "distance": 26.73406857393519,
+    "distance": 26.730526476012674,
     "object": "B1 distant end wall.001",
-    "render_depth": 25.726085662841797,
-    "difference": -0.0,
-    "euclidean_render_depth": 26.7340517662958
+    "euclidean_render_depth": 26.730519711683677,
+    "difference": -6.7643289973773335e-06
   },
   {
     "preset": "01-clock-atrium",
     "pixel": [
-      180,
-      340
+      540,
+      1020
     ],
     "hit": true,
-    "distance": 17.387698575935175,
+    "distance": 17.416245280496316,
     "object": "G elongated diamond panel.012",
-    "render_depth": 15.191265106201172,
-    "difference": 0.0,
-    "euclidean_render_depth": 17.38774244201779
+    "euclidean_render_depth": 17.416263481919046,
+    "difference": 1.8201422729902106e-05
   },
   {
     "preset": "01-clock-atrium",
     "pixel": [
-      460,
-      280
+      1380,
+      840
     ],
     "hit": true,
-    "distance": 23.687772029633237,
+    "distance": 23.731602017693028,
     "object": "G continuing corridor floor.001",
-    "render_depth": 21.557514190673828,
-    "difference": 0.0001,
-    "euclidean_render_depth": 23.687855968562243
+    "euclidean_render_depth": 23.73162229319785,
+    "difference": 2.0275504823530355e-05
   },
   {
     "preset": "01-clock-atrium",
     "pixel": [
-      320,
-      220
+      960,
+      660
     ],
     "hit": true,
-    "distance": 21.466740099068538,
+    "distance": 21.46790686316319,
     "object": "G oxide end arcade.001",
-    "render_depth": 21.431114196777344,
-    "difference": -0.0,
-    "euclidean_render_depth": 21.466726914760482
+    "euclidean_render_depth": 21.467903160226292,
+    "difference": -3.7029368975538546e-06
   },
   {
     "preset": "02-cafe-gallery",
     "pixel": [
-      320,
-      300
+      960,
+      900
     ],
     "hit": true,
-    "distance": 4.9364706487502685,
+    "distance": 4.940643034485265,
     "object": "Level 1 fitted carpet",
-    "render_depth": 4.750355243682861,
-    "difference": 0.0,
-    "euclidean_render_depth": 4.936477498259401
+    "euclidean_render_depth": 4.94064402760178,
+    "difference": 9.931165152465837e-07
   },
   {
     "preset": "02-cafe-gallery",
     "pixel": [
-      180,
-      340
+      540,
+      1020
     ],
     "hit": true,
-    "distance": 11.619626838058561,
+    "distance": 11.630824497542548,
     "object": "G gallery with basement light wells",
-    "render_depth": 10.151813507080078,
-    "difference": 0.0,
-    "euclidean_render_depth": 11.61964572051674
+    "euclidean_render_depth": 11.630829565379008,
+    "difference": 5.067836459815567e-06
   },
   {
     "preset": "02-cafe-gallery",
     "pixel": [
-      460,
-      280
+      1380,
+      840
     ],
     "hit": true,
-    "distance": 4.842353865703472,
+    "distance": 4.845671291162186,
     "object": "Bentwood chair seat.037",
-    "render_depth": 4.406869411468506,
-    "difference": 0.0,
-    "euclidean_render_depth": 4.842362016687867
+    "euclidean_render_depth": 4.84567405374291,
+    "difference": 2.7625807241804523e-06
   },
   {
     "preset": "02-cafe-gallery",
     "pixel": [
-      320,
-      220
+      960,
+      660
     ],
     "hit": true,
-    "distance": 6.351869094787333,
+    "distance": 6.358858654607934,
     "object": "Cafe table claw foot.076",
-    "render_depth": 6.341343402862549,
-    "difference": 0.0,
-    "euclidean_render_depth": 6.351881001242494
+    "euclidean_render_depth": 6.358877733871822,
+    "difference": 1.9079263887888942e-05
   },
   {
     "preset": "03-opposite-shops",
     "pixel": [
-      320,
-      300
+      960,
+      900
     ],
     "hit": true,
-    "distance": 7.131760709528525,
+    "distance": 7.140676223030675,
     "object": "Level 1 fitted carpet",
-    "render_depth": 6.956146240234375,
-    "difference": 0.0,
-    "euclidean_render_depth": 7.131776125899592
+    "euclidean_render_depth": 7.1406829082449725,
+    "difference": 6.685214297696973e-06
   },
   {
     "preset": "03-opposite-shops",
     "pixel": [
-      180,
-      340
+      540,
+      1020
     ],
     "hit": true,
-    "distance": 6.513018775236976,
+    "distance": 6.5208770295487914,
     "object": "Level 1 fitted carpet",
-    "render_depth": 5.949394702911377,
-    "difference": 0.0,
-    "euclidean_render_depth": 6.51303188756444
+    "euclidean_render_depth": 6.520882047357417,
+    "difference": 5.017808625495945e-06
   },
   {
     "preset": "03-opposite-shops",
     "pixel": [
-      460,
-      280
+      1380,
+      840
     ],
     "hit": true,
-    "distance": 16.81610307054664,
+    "distance": 16.805951115740612,
     "object": "G retail rear lining.005",
-    "render_depth": 15.800101280212402,
-    "difference": -0.0,
-    "euclidean_render_depth": 16.816098287942324
+    "euclidean_render_depth": 16.805950534938138,
+    "difference": -5.808024745590501e-07
   },
   {
     "preset": "03-opposite-shops",
     "pixel": [
-      320,
-      220
+      960,
+      660
     ],
     "hit": true,
-    "distance": 10.525913624060998,
+    "distance": 10.548004763458085,
     "object": "Level 1 fitted carpet",
-    "render_depth": 10.514753341674805,
-    "difference": 0.0,
-    "euclidean_render_depth": 10.52593919799357
+    "euclidean_render_depth": 10.548019697173476,
+    "difference": 1.4933715391407532e-05
   },
   {
     "preset": "04-escalator",
     "pixel": [
-      320,
-      300
+      960,
+      900
     ],
     "hit": true,
-    "distance": 7.138196536414536,
+    "distance": 7.13604108394035,
     "object": "Gallery continuous rail",
-    "render_depth": 6.892815113067627,
-    "difference": 0.0,
-    "euclidean_render_depth": 7.13820318976714
+    "euclidean_render_depth": 7.136043667341168,
+    "difference": 2.5834008177128e-06
   },
   {
     "preset": "04-escalator",
     "pixel": [
-      180,
-      340
+      540,
+      1020
     ],
     "hit": true,
-    "distance": 31.233929759254185,
+    "distance": 31.29412687656386,
     "object": "B1 tiled concourse",
-    "render_depth": 27.593727111816406,
-    "difference": 0.0001,
-    "euclidean_render_depth": 31.23402269476182
+    "euclidean_render_depth": 31.294155979349743,
+    "difference": 2.910278588430515e-05
   },
   {
     "preset": "04-escalator",
     "pixel": [
-      460,
-      280
+      1380,
+      840
     ],
     "hit": true,
-    "distance": 9.117068854624796,
+    "distance": 9.100673203142541,
     "object": "Gallery continuous rail",
-    "render_depth": 8.364191055297852,
-    "difference": -0.0,
-    "euclidean_render_depth": 9.117065868037605
+    "euclidean_render_depth": 9.1006722839942,
+    "difference": -9.191483414383583e-07
   },
   {
     "preset": "04-escalator",
     "pixel": [
-      320,
-      220
+      960,
+      660
     ],
     "hit": true,
-    "distance": 14.681525894372413,
+    "distance": 14.680435315909596,
     "object": "Escalator glass balustrade.001",
-    "render_depth": 14.659423828125,
-    "difference": -0.0,
-    "euclidean_render_depth": 14.681520772734956
+    "euclidean_render_depth": 14.680433405952527,
+    "difference": -1.9099570689462553e-06
   }
 ]

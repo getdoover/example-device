@@ -2,7 +2,7 @@
 
 [Open the Blender scene](raw/qvb-camera-scene.blend). The model reconstructs the Queen Victoria Building gallery around the ceiling camera marked in the reference. It is an editable 3D scene with a fixed camera mount, separate pan and tilt controls, and rendered view presets.
 
-The [device configuration](config.json) and [camera history](channels/doover_camera.json) package 888 hourly captures with four views each: 3,552 JPEGs at 640 × 400, quality 38. The series covers offsets -168 through 719 hours, with seven days before installation and 30 days starting at installation midnight.
+The [device configuration](config.json) and [camera history](channels/doover_camera.json) package 888 hourly captures with four views each: 3,552 JPEGs at 960 × 600, quality 75. This is the Balanced quality setting. The series covers offsets -168 through 719 hours, with seven days before installation and 30 days starting at installation midnight.
 
 Each capture contains four native Doover attachments, matching the PTZ camera history on the [reference device](https://dojo.doover.com/agent/144933745630167049). The [format notes](raw/references/doover-ptz.md) record the observed payload and UI contract. Stable view names allow switching between the clock, café gallery, opposite shops, and escalator. The `doover_camera` display app is inert; the example processor publishes its history and tags.
 
@@ -12,14 +12,14 @@ Snapshots use elapsed hourly offsets from the install anchor. The visual day cyc
 
 [Preview the series](raw/series-contact-sheet.jpg), or inspect the [hour-by-hour manifest](raw/series-manifest.json). Every hourly crowd is sampled once in scene coordinates and projected into all four camera views. People differ in clothing, pose, position, and direction, with more shoppers during the day and a few overnight workers.
 
-The separate [series scene](raw/qvb-camera-series.blend) supplies the architecture, lighting, and clothed human models. The generator combines Blender-rendered backgrounds and people using the scene's depth pass, including occlusion by railings and shopfronts. This keeps the image set small and fast to regenerate. The detailed master scene remains unchanged.
+The separate [series scene](raw/qvb-camera-series.blend) supplies the architecture, lighting, and clothed human models. The generator combines native 1920 × 1200 Blender backgrounds and people using the scene's depth pass, including occlusion by railings and shopfronts. It downsamples each completed image to 960 × 600 with Lanczos filtering and saves a progressive JPEG at quality 75. The detailed master scene, hourly crowds, lighting, and camera positions remain unchanged.
 
-Images are stored under `attachments/hour-m0168/` through `attachments/hour-0719/`, with `hour-0000/` at installation. The complete JPEG set is 76,971,119 bytes, about 77 MB. The [verification report](raw/series-verification.json) records image counts, sizes, hashes, and dimensions. The processor checks each file's size and SHA-256 before uploading it.
+Images are stored under `attachments/hour-m0168/` through `attachments/hour-0719/`, with `hour-0000/` at installation. The complete JPEG set is 280,688,550 bytes, or 280.69 MB, averaging 79.0 kB per image. The previous week's 672 images total 53,104,712 bytes, or 53.10 MB. These are measured JPEG payload sizes in decimal units. The [verification report](raw/series-verification.json) records image counts, sizes, hashes, and dimensions. The processor checks each file's size and SHA-256 before uploading it.
 
 To regenerate from the saved source layers:
 
 ```sh
-uv run --no-project --with numpy --with pillow --with openexr python devices/camera-device/raw/generate_series.py
+uv run --no-project --with numpy==2.5.3 --with pillow==12.3.0 --with openexr==3.4.15 python devices/camera-device/raw/generate_series.py
 uv run python tools/generate_camera_device.py
 uv run example-device validate devices/camera-device
 uv run example-device simulate devices/camera-device --anchor-ms 1789308000000 --output build/camera-playback.json

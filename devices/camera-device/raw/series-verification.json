@@ -3,10 +3,14 @@
   "unique_image_hashes": 3552,
   "hours": 888,
   "resolution": [
-    640,
-    400
+    960,
+    600
   ],
-  "bytes": 76971119,
+  "source_resolution": [
+    1920,
+    1200
+  ],
+  "bytes": 280688550,
   "first_offset_hours": -168,
   "last_offset_hours": 719,
   "master_scene_unchanged": true,
@@ -14,7 +18,7 @@
   "minimum_visible_people": 1,
   "depth_validation": {
     "sampled_rays": 16,
-    "maximum_error_metres": 0.0001,
+    "maximum_error_metres": 2.910278588430515e-05,
     "method": "Compare Euclidean-converted Blender Z pass with scene ray casts"
   }
 }
