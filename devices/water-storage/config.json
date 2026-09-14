@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "slug": "water-storage",
-  "name": "Water storage example",
+  "name": "Example Water Storage",
   "processor": {
     "app_key": "example_device",
     "application_name": "example_device"

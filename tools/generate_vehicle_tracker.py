@@ -450,7 +450,7 @@ def generate(sampler, applications, ui):
     config = {
         "schema_version": 1,
         "slug": "vehicle-tracker",
-        "name": "Bunnings vehicle tracker example",
+        "name": "Example Vehicle Tracker",
         "processor": {
             "app_key": "example_device",
             "application_name": "example_device",

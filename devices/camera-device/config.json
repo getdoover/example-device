@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "slug": "camera-device",
-  "name": "QVB camera example",
+  "name": "Example Camera Device",
   "processor": {
     "app_key": "example_device",
     "application_name": "example_device"

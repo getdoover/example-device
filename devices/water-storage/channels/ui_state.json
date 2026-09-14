@@ -14,17 +14,6 @@
             "position": 100,
             "defaultOpen": true,
             "children": {
-              "example_notice": {
-                "name": "example_notice",
-                "type": "uiVariable",
-                "displayString": "Example device",
-                "position": 1,
-                "hidden": false,
-                "showActivity": false,
-                "varType": "string",
-                "currentValue": "Example device: all measurements are precreated. Inputs record your selection and acknowledgement, but do not change the incoming data.",
-                "notGraphable": true
-              },
               "volume": {
                 "name": "volume",
                 "type": "uiVariable",

@@ -184,16 +184,6 @@
             }
           ],
           "notGraphable": true
-        },
-        "uploading_example_history": {
-          "name": "uploading_example_history",
-          "type": "uiVariable",
-          "displayString": "Uploading example history",
-          "showActivity": true,
-          "position": 52,
-          "hidden": false,
-          "varType": "string",
-          "currentValue": "History is being uploaded. This panel will hide when the import is complete."
         }
       }
     }
