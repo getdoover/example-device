@@ -150,6 +150,26 @@ class ExampleDevice(Application):
         )
         return runtime
 
+    async def _report_import_progress(self, state, total):
+        complete = state.phase in ("active", "exhausted")
+        # Keep the panel visible until both history and current aggregates commit.
+        completed = min(state.cursor, state.aggregate_cursor)
+        progress = 100 if complete else min(99, 100 * completed // max(1, total))
+        await self.api.update_channel_aggregate(
+            "tag_values",
+            {self.app_key: {"import_complete": complete, "import_progress": progress}},
+            log_update=False,
+            suppress_response=True,
+        )
+        # The connection banner has fixed labels. Hide its Online label while
+        # our orange import panel is visible, but retain offline reporting.
+        await self.api.update_channel_aggregate(
+            "doover_connection",
+            {"config": {"display": "Always" if complete else "OfflineOnly"}},
+            log_update=False,
+            suppress_response=True,
+        )
+
     async def _play(self, *, presence_event=False):
         try:
             runtime = await self._runtime()
@@ -157,7 +177,10 @@ class ExampleDevice(Application):
             presence = await runtime.transport.aggregate("dv-ui-sub")
             observed = is_page_observed(presence, now_ms)
             result = await runtime.run(
-                now_ms, observed=observed, force=presence_event and observed
+                now_ms,
+                observed=observed,
+                force=presence_event and observed,
+                on_progress=self._report_import_progress,
             )
             # Liveness follows successful processor checks, independently of the
             # sparse telemetry cadence and the dataset's historical timestamps.

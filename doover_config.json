@@ -152,34 +152,48 @@
     },
     "ui_schema": {
       "displayString": "$config.app().APP_DISPLAY_NAME",
-      "hidden": "$config.app().interpreter_hidden:boolean:false",
+      "hidden": "$tag.app().import_complete:boolean:false",
       "fullWidth": "$config.app().interpreter_full_width:boolean:false",
-      "position": "$config.app().dv_app_position:number:100",
+      "position": 0,
       "icon": null,
-      "colour": null,
-      "defaultOpen": "$config.app().dv_app_default_open:boolean",
+      "colour": "orange",
+      "defaultOpen": true,
       "type": "uiApplication",
       "name": "$config.app().APP_KEY",
       "children": {
-        "example_data": {
-          "name": "example_data",
+        "import_progress": {
+          "name": "import_progress",
           "type": "uiVariable",
-          "displayString": "Example data",
-          "showActivity": true,
-          "position": 51,
+          "displayString": "History importing",
+          "showActivity": false,
+          "form": "linearGauge",
+          "position": 0,
           "hidden": false,
-          "varType": "string",
-          "currentValue": "Inputs are acknowledged but do not change the precreated telemetry."
+          "units": "%",
+          "colour": "orange",
+          "varType": "float",
+          "currentValue": "$tag.app().import_progress:number:0",
+          "decPrecision": 0,
+          "ranges": [
+            {
+              "min": 0,
+              "max": 100,
+              "colour": "orange",
+              "show_on_graph": true,
+              "label": "History importing"
+            }
+          ],
+          "notGraphable": true
         },
-        "playback": {
-          "name": "playback",
+        "uploading_example_history": {
+          "name": "uploading_example_history",
           "type": "uiVariable",
-          "displayString": "Playback",
+          "displayString": "Uploading example history",
           "showActivity": true,
           "position": 52,
           "hidden": false,
           "varType": "string",
-          "currentValue": "$tag.app().phase:string:\"initializing\""
+          "currentValue": "History is being uploaded. This panel will hide when the import is complete."
         }
       }
     }
