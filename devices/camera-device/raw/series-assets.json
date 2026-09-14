@@ -10,12 +10,22 @@
     60
   ],
   "cell_pixels": [
-    80,
-    160
+    240,
+    480
   ],
   "cell_metres": [
     1.2,
     2.4
   ],
-  "foot_height_in_cell_metres": 0.18
+  "foot_height_in_cell_metres": 0.18,
+  "background_resolution": [
+    1920,
+    1200
+  ],
+  "atlas_resolution": [
+    1920,
+    11520
+  ],
+  "background_cycles_samples": 16,
+  "atlas_cycles_samples": 12
 }

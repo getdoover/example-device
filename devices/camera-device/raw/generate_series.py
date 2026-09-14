@@ -1,6 +1,6 @@
-"""Generate small, deterministic JPEG camera attachments from Blender layers.
+"""Generate 960×600 JPEG camera attachments from native Blender layers.
 
-uv run --no-project --with numpy --with pillow --with openexr python \
+uv run --no-project --with numpy==2.5.3 --with pillow==12.3.0 --with openexr==3.4.15 python \
     devices/camera-device/raw/generate_series.py
 
 The hourly crowd is sampled once in world space, then seen by all four fixed
@@ -23,8 +23,10 @@ from PIL import Image, ImageDraw, ImageFont
 ROOT = Path(__file__).resolve().parent
 DEVICE = ROOT.parent
 CACHE = ROOT / "series-cache"
-WIDTH, HEIGHT = 640, 400
-QUALITY = 38
+WIDTH, HEIGHT = 1920, 1200
+OUTPUT_WIDTH, OUTPUT_HEIGHT = 960, 600
+TILE_WIDTH, TILE_HEIGHT = 240, 480
+QUALITY = 75
 BASE_SEED = 2016011449
 parser = argparse.ArgumentParser()
 parser.add_argument("--benchmark", action="store_true")
@@ -111,7 +113,10 @@ def verify(manifest):
             path = DEVICE / record["path"]
             with Image.open(path) as image:
                 image.load()
-                assert image.size == (WIDTH, HEIGHT) and image.format == "JPEG"
+                assert (
+                    image.size == (OUTPUT_WIDTH, OUTPUT_HEIGHT)
+                    and image.format == "JPEG"
+                )
             assert path.stat().st_size == record["bytes"]
             assert digest(path) == record["sha256"]
             files.append(path)
@@ -124,7 +129,8 @@ def verify(manifest):
         images=len(files),
         unique_image_hashes=len(hashes),
         hours=888,
-        resolution=[WIDTH, HEIGHT],
+        resolution=[OUTPUT_WIDTH, OUTPUT_HEIGHT],
+        source_resolution=[WIDTH, HEIGHT],
         bytes=sum(p.stat().st_size for p in files),
         first_offset_hours=-168,
         last_offset_hours=719,
@@ -196,7 +202,12 @@ atlases = {
 }
 sprites = {
     (angle, identity, yaw): atlas.crop(
-        (yaw * 80, identity * 160, (yaw + 1) * 80, (identity + 1) * 160)
+        (
+            yaw * TILE_WIDTH,
+            identity * TILE_HEIGHT,
+            (yaw + 1) * TILE_WIDTH,
+            (identity + 1) * TILE_HEIGHT,
+        )
     )
     for angle, atlas in atlases.items()
     for identity in range(24)
@@ -223,7 +234,6 @@ for name, camera in cameras.items():
     assert depth.shape == (HEIGHT, WIDTH), depth.shape
     # Blender Z pass measures camera-axis distance, while our rays are unit length.
     depth = depth * np.linalg.norm(camera_rays, axis=-1)
-    np.savez_compressed(CACHE / (name + "-depth.npz"), depth=depth)
     renderers[name] = dict(
         camera=camera,
         view=view,
@@ -245,7 +255,7 @@ for check in depth_checks:
     x, y = check["pixel"]
     measured = float(renderers[check["preset"]]["depth"][y, x])
     check["euclidean_render_depth"] = measured
-    check["difference"] = round(measured - check["distance"], 4)
+    check["difference"] = measured - check["distance"]
     assert abs(check["difference"]) <= 0.001, check
 (CACHE / "depth-ray-check.json").write_text(json.dumps(depth_checks, indent=2) + "\n")
 
@@ -293,10 +303,10 @@ def render_people(renderer, people, lighting, brightness):
             renderer["projection"][0, 0]
             * WIDTH
             / (2 * camera_z)
-            / (80 / 1.2)
+            / (TILE_WIDTH / 1.2)
             * p["height_scale"]
         )
-        w, h = max(1, round(80 * scale)), max(1, round(160 * scale))
+        w, h = max(1, round(TILE_WIDTH * scale)), max(1, round(TILE_HEIGHT * scale))
         if h < 5 or w > WIDTH * 2:
             continue
         left, top = round(px - w * 0.5), round(py - h * (1 - 0.18 / 2.4))
@@ -356,7 +366,9 @@ def render_people(renderer, people, lighting, brightness):
 
 
 started = time.monotonic()
-offsets = [2, 12, 18] if args.benchmark else list(range(-168, 720))
+offsets = (
+    [2, 12, 18, 26, 36, 42, 50, 60, 66] if args.benchmark else list(range(-168, 720))
+)
 hours = []
 for offset in offsets:
     people = crowd_for_hour(offset)
@@ -369,6 +381,7 @@ for offset in offsets:
         else:
             path = DEVICE / "attachments" / hour_folder(offset) / (name + ".jpg")
         path.parent.mkdir(parents=True, exist_ok=True)
+        image = image.resize((OUTPUT_WIDTH, OUTPUT_HEIGHT), Image.Resampling.LANCZOS)
         image.save(
             path,
             format="JPEG",
@@ -425,11 +438,19 @@ manifest = dict(
         "forward_days": 30,
     },
     time_semantics="Elapsed hourly offsets anchored at install local midnight; visual local_hour is offset modulo 24, so a DST transition shifts displayed wall-clock hour",
-    resolution=[WIDTH, HEIGHT],
+    resolution=[OUTPUT_WIDTH, OUTPUT_HEIGHT],
+    source_resolution=[WIDTH, HEIGHT],
     jpeg_quality=QUALITY,
     master_scene_sha256=assets["master_sha256"],
     series_scene="qvb-camera-series.blend",
-    presets=list(cameras.values()),
+    presets=[
+        dict(
+            camera,
+            resolution=[OUTPUT_WIDTH, OUTPUT_HEIGHT],
+            source_resolution=camera["resolution"],
+        )
+        for camera in cameras.values()
+    ],
     assumptions=[
         "Thirty days after install is the synthetic month; one week before install",
         "Overnight crowd represents security and cleaning staff",

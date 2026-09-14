@@ -57,7 +57,7 @@ def device_config():
                         "duration": 1,
                         "fps": 1,
                         "native_h264": True,
-                        "scale": "640:-1",
+                        "scale": "960:-1",
                     },
                     "dv_app_position": 100,
                 },
