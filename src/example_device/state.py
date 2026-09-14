@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from typing import Any, Literal
 
 Phase = Literal["initializing", "importing", "active", "exhausted"]
+READY_HISTORY_MESSAGES = 50
 
 
 class StateError(ValueError):
@@ -46,6 +47,44 @@ class CommandProgress:
 
 
 @dataclass
+class HistoryProgress:
+    """Import [floor, end) backwards, independently of forward playback."""
+
+    floor: int
+    end: int
+    cursor: int
+    recent_count: int = 0
+
+    @property
+    def pending(self) -> bool:
+        return self.cursor > self.floor
+
+    @property
+    def ready(self) -> bool:
+        return self.recent_count >= READY_HISTORY_MESSAGES or not self.pending
+
+    def to_dict(self) -> dict[str, int]:
+        return {
+            "floor": self.floor,
+            "end": self.end,
+            "cursor": self.cursor,
+            "recent_count": self.recent_count,
+        }
+
+    @classmethod
+    def from_dict(cls, raw: dict[str, Any]) -> HistoryProgress:
+        floor = _integer(raw.get("floor"), "history floor", minimum=0)
+        end = _integer(raw.get("end"), "history end", minimum=0)
+        cursor = _integer(raw.get("cursor"), "history cursor", minimum=0)
+        count = _integer(raw.get("recent_count"), "recent count", minimum=0)
+        if not floor <= cursor <= end or count > min(
+            READY_HISTORY_MESSAGES, end - cursor
+        ):
+            raise StateError("Invalid history progress")
+        return cls(floor, end, cursor, count)
+
+
+@dataclass
 class PlaybackState:
     dataset_slug: str
     revision: str
@@ -56,10 +95,11 @@ class PlaybackState:
     last_publication_ms: int | None = None
     last_observed: bool = False
     commands: dict[str, CommandProgress] = field(default_factory=dict)
+    history: HistoryProgress | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            "version": 1,
+            "version": 2 if self.history is not None else 1,
             "dataset_slug": self.dataset_slug,
             "revision": self.revision,
             "anchor_ms": self.anchor_ms,
@@ -69,13 +109,19 @@ class PlaybackState:
             "last_publication_ms": self.last_publication_ms,
             "last_observed": self.last_observed,
             "commands": {key: item.to_dict() for key, item in self.commands.items()},
+            "history": self.history.to_dict() if self.history is not None else None,
         }
 
     @classmethod
     def from_dict(cls, raw: dict[str, Any]) -> PlaybackState:
         """Parse the external tag value once at the storage boundary."""
-        if raw.get("version") != 1:
+        if raw.get("version") not in (1, 2):
             raise StateError("Unsupported playback state version")
+        history = None
+        if raw["version"] == 2:
+            if not isinstance(raw.get("history"), dict):
+                raise StateError("Playback state requires history progress")
+            history = HistoryProgress.from_dict(raw["history"])
         phase = raw.get("phase")
         if phase not in ("initializing", "importing", "active", "exhausted"):
             raise StateError("Invalid playback phase")
@@ -135,6 +181,7 @@ class PlaybackState:
             last,
             observed,
             commands,
+            history,
         )
 
 
