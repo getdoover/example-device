@@ -31,7 +31,3 @@ class ExampleUI(
         show_activity=False,
         position=0,
     )
-    notice = ui.TextVariable(
-        "Uploading example history",
-        value="History is being uploaded. This panel will hide when the import is complete.",
-    )

@@ -25,10 +25,6 @@ CAPACITY_ML = 10.0
 DEPTH_M = 4.0
 SENSOR_M = 4.5
 EVENTS = tuple((day * DAY, day * DAY + 30 * HOUR) for day in (-68, -32, -5))
-NOTICE = (
-    "Example device: all measurements are precreated. Inputs record your "
-    "selection and acknowledgement, but do not change the incoming data."
-)
 
 
 def volume_at(timestamp):
@@ -190,7 +186,6 @@ def app_ui(key, label, position, children):
 def static_ui():
     """Native Doover UI objects with fresh values and portable app bindings."""
     tank = {
-        "example_notice": text_variable("example_notice", "Example device", NOTICE, 1),
         "volume": numeric(
             "volume",
             "Volume",
@@ -383,7 +378,7 @@ def device_config():
     return {
         "schema_version": 1,
         "slug": "water-storage",
-        "name": "Water storage example",
+        "name": "Example Water Storage",
         "processor": {
             "app_key": "example_device",
             "application_name": "example_device",

@@ -36,7 +36,7 @@ def device_config():
     return {
         "schema_version": 1,
         "slug": "camera-device",
-        "name": "QVB camera example",
+        "name": "Example Camera Device",
         "processor": {
             "app_key": "example_device",
             "application_name": "example_device",
@@ -90,17 +90,6 @@ def camera_ui():
                     "defaultOpen": True,
                     "fullWidth": True,
                     "children": {
-                        "example_notice": {
-                            "name": "example_notice",
-                            "type": "uiVariable",
-                            "displayString": "Example camera",
-                            "hidden": False,
-                            "position": 1,
-                            "showActivity": False,
-                            "varType": "string",
-                            "notGraphable": True,
-                            "currentValue": "Simulated QVB snapshots, captured hourly across four views. Choose a view and time in History. Get Now and live controls are unavailable in this example.",
-                        },
                         "history": {
                             "name": "history",
                             "type": "uiCameraHistory",
