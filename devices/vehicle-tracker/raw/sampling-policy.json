@@ -1,8 +1,14 @@
 {
-  "journey_sha256": "bd5c3dd9c24e73452fe894b57fd786520f81322a18fd89773c355f9ff1c48d8e",
-  "source_start_utc": "2027-01-03T22:00:00+00:00",
-  "source_zero_utc": "2027-02-18T22:00:00+00:00",
-  "source_export_end_utc": "2027-03-20T22:00:00+00:00",
+  "journey_sha256": "6928264cd5384f6a282f9f622fc1a4a71d5e13786079703c524b832bbe442aa6",
+  "source_start_utc": "2026-07-29T14:00:00+00:00",
+  "calendar": {
+    "anchor_date": "2026-09-14",
+    "anchor_timezone": "Australia/Brisbane",
+    "anchor_ms": 1789308000000,
+    "policy": "46 elapsed days of history before local midnight; 30 elapsed days of future data. Daily road trips start at 09:00 local, with original route and visit durations. Overnight waits use the installation calendar and IANA daylight-saving rules."
+  },
+  "source_zero_utc": "2026-09-13T14:00:00+00:00",
+  "source_export_end_utc": "2026-10-13T14:00:00+00:00",
   "history_days": 46,
   "future_days": 30,
   "cadence": [
@@ -20,8 +26,8 @@
     }
   ],
   "extra_samples": "Exact event starts and ends, deduplicated against regular ticks.",
-  "cutoff_note": "Export ends exactly 76 elapsed days after departure. Any remaining final parked accommodation stays in raw data only; its length is source_parked_tail_omitted_ms. All travel and all 334 visits are included.",
-  "source_parked_tail_omitted_ms": 5400000,
+  "cutoff_note": "Export includes 46 elapsed days before midnight zero and 30 elapsed days after it. Stationary padding before the first 09:00 visit keeps the history window exact. Any remaining final parked accommodation stays in raw data only; its length is source_parked_tail_omitted_ms. All travel and all 334 visits are included.",
+  "source_parked_tail_omitted_ms": 34200000,
   "counter_baseline": {
     "odometer_km": 0,
     "run_hours": 0
@@ -50,9 +56,9 @@
   },
   "tracking_samples": 7007,
   "sample_reasons": {
-    "regular_and_transition": 79,
-    "transition": 742,
-    "regular": 6186
+    "regular_and_transition": 80,
+    "regular": 6185,
+    "transition": 742
   },
   "period_counts": {
     "older_history": 1427,
@@ -62,7 +68,7 @@
   },
   "zero_snapshot": {
     "offset_ms": 0,
-    "source_utc": "2027-02-18T22:00:00+00:00",
+    "source_utc": "2026-09-13T14:00:00+00:00",
     "event_id": "event-0617",
     "event_kind": "overnight",
     "location": {
@@ -79,7 +85,7 @@
         "odometer_km": 11748.651,
         "system_voltage": 12.6,
         "battery_voltage": 3.65,
-        "signal_strength": 60.8,
+        "signal_strength": 83.6,
         "device_temp": 21.5,
         "analog_input_v": null,
         "uplink_reason": "Parked overnight",
@@ -94,7 +100,7 @@
         "last_service_hours": 0,
         "last_service_odometer": 0,
         "kms_till_next_service": -1748.651,
-        "days_till_next_service": 135.041667,
+        "days_till_next_service": 137.958333,
         "next_service_est": 0
       }
     },
@@ -102,7 +108,7 @@
   },
   "final_snapshot": {
     "offset_ms": 2592000000,
-    "source_utc": "2027-03-20T22:00:00+00:00",
+    "source_utc": "2026-10-13T14:00:00+00:00",
     "event_id": "event-0821",
     "event_kind": "overnight",
     "location": {
@@ -119,7 +125,7 @@
         "odometer_km": 25286.561,
         "system_voltage": 12.6,
         "battery_voltage": 3.65,
-        "signal_strength": 76.9,
+        "signal_strength": 82.1,
         "device_temp": 21.5,
         "analog_input_v": null,
         "uplink_reason": "Parked overnight",
@@ -134,7 +140,7 @@
         "last_service_hours": 0,
         "last_service_odometer": 0,
         "kms_till_next_service": -15286.561,
-        "days_till_next_service": 105.041667,
+        "days_till_next_service": 107.958333,
         "next_service_est": 2592000000
       }
     },

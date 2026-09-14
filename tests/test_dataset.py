@@ -295,3 +295,11 @@ def test_public_schemas_accept_parser_examples():
         schema = json.loads((root / "schemas" / filename).read_text())
         Draft202012Validator.check_schema(schema)
         Draft202012Validator(schema).validate(instance)
+
+
+@pytest.mark.parametrize("value", [True, "1789308000000", 0, None, -1])
+def test_invalid_required_calendar_anchor(value):
+    raw = config()
+    raw["required_anchor_ms"] = value
+    with pytest.raises(DatasetError):
+        parse_dataset(raw, {"tag_values": [sample()]})

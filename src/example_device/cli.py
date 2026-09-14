@@ -71,6 +71,7 @@ def main():
                 name: len(entries) for name, entries in dataset.channels.items()
             },
             "duration_ms": dataset.duration_ms,
+            "required_anchor_ms": dataset.config.required_anchor_ms,
         }
     else:
         output = asyncio.run(

@@ -112,7 +112,10 @@ def test_export_cadence_zero_and_coverage(exported):
     assert samples[0]["offset_ms"] == -46 * DAY
     assert samples[-1]["offset_ms"] == 30 * DAY
     assert millis(policy["source_export_end_utc"]) - zero == 30 * DAY
-    assert policy["source_parked_tail_omitted_ms"] == 90 * 60_000
+    assert (
+        policy["source_parked_tail_omitted_ms"]
+        == millis(journey["events"][-1]["end_utc"]) - zero - 30 * DAY
+    )
     regular = set(range(-46 * DAY, -7 * DAY, 3_600_000))
     regular.update(range(-7 * DAY, 30 * DAY + 1, 600_000))
     boundaries = {
@@ -137,7 +140,7 @@ def test_export_cadence_zero_and_coverage(exported):
 
 def test_channels_pair_every_sample_and_rebase_dates(exported):
     _, policy, samples, dataset = exported
-    anchor = 1_893_456_000_000
+    anchor = dataset.config.required_anchor_ms
     for channel, field in (("tag_values", "tags"), ("location", "location")):
         messages = [e for e in dataset.channels[channel] if e.kind == "message"]
         assert len(messages) == len(samples)
@@ -275,7 +278,7 @@ def test_generator_is_deterministic_and_keeps_raw_journey(exported, tmp_path):
 
 def test_real_runtime_imports_history_and_replays_paired_vehicle_state(exported):
     _, policy, samples, dataset = exported
-    anchor = 1_893_456_000_000
+    anchor = dataset.config.required_anchor_ms
 
     async def check():
         transport = MemoryTransport()
@@ -305,6 +308,10 @@ def test_real_runtime_imports_history_and_replays_paired_vehicle_state(exported)
         departure = next(
             s for s in samples if s["offset_ms"] > 0 and s["event_kind"] == "drive"
         )
+        assert departure["offset_ms"] == 9 * 3_600_000
+        await advance(departure["offset_ms"] - 60_000)
+        assert transport.aggregates["tag_values"][TRACKER]["ignition_on"] is False
+        assert transport.aggregates["location"] == policy["zero_snapshot"]["location"]
         await advance(departure["offset_ms"])
         assert transport.aggregates["location"] == departure["location"]
         assert transport.aggregates["tag_values"][TRACKER]["ignition_on"] is True
@@ -386,3 +393,98 @@ async def test_export_downloads_through_real_source_loader(monkeypatch, exported
         )
     assert fetched == dataset
     assert calls == list(files)
+
+
+def test_export_zero_is_midnight_and_today_drives_only_in_local_hours(exported):
+    from zoneinfo import ZoneInfo
+
+    journey, policy, _, _ = exported
+    zero = datetime.fromisoformat(policy["source_zero_utc"])
+    assert zero.astimezone(ZoneInfo("Australia/Brisbane")).hour == 0
+    anchor = millis("2026-09-14T00:00:00+10:00")
+    for event in journey["events"]:
+        if event["kind"] != "drive":
+            continue
+        for field, zone in [("start_utc", "timezone"), ("end_utc", "end_timezone")]:
+            installed = datetime.fromtimestamp(
+                (anchor + millis(event[field]) - millis(policy["source_zero_utc"]))
+                / 1000,
+                ZoneInfo(event[zone]),
+            )
+            assert (
+                9 <= installed.hour < 17 or installed.time().isoformat() == "17:00:00"
+            ), (event["id"], installed)
+
+
+def test_wrong_installation_anchor_is_rejected_before_history_writes(exported):
+    dataset = exported[3]
+    transport = MemoryTransport()
+    with pytest.raises(
+        ValueError, match="regenerate it for the requested installation date"
+    ):
+        Runtime(
+            dataset,
+            transport,
+            anchor_ms=dataset.config.required_anchor_ms + 8 * 3_600_000,
+            revision="test",
+            installation_id="test",
+        )
+    assert not transport.messages
+    assert not transport.aggregates
+    assert transport.state is None
+
+
+@pytest.mark.parametrize(
+    "anchor_date", ["2026-09-14", "2027-01-15", "2027-04-15", "2027-11-01"]
+)
+def test_calendar_reschedule_preserves_stops_distances_and_elapsed_drive_times(
+    exported, anchor_date
+):
+    from datetime import date
+    from zoneinfo import ZoneInfo
+
+    original = exported[0]
+    changed = generator.schedule_journey(original, date.fromisoformat(anchor_date))
+    by_id = {e["id"]: e for e in original["events"]}
+    assert changed["routes"] == original["routes"]
+    assert (
+        len({e["place_id"] for e in changed["events"] if e["kind"] == "visit"}) == 334
+    )
+    for previous, event in zip(changed["events"], changed["events"][1:]):
+        assert previous["end_utc"] == event["start_utc"]
+    for event in changed["events"]:
+        if event["kind"] in ("drive", "ferry", "visit"):
+            assert event["duration_s"] == by_id[event["id"]]["duration_s"]
+        if event["kind"] == "visit":
+            assert event["duration_s"] >= 1800
+        if event["kind"] == "drive":
+            for field, zone in [("start_utc", "timezone"), ("end_utc", "end_timezone")]:
+                local = datetime.fromisoformat(event[field]).astimezone(
+                    ZoneInfo(event[zone])
+                )
+                assert 9 <= local.hour < 17 or local.time().isoformat() == "17:00:00"
+    zero = changed["metadata"]["calendar"]["anchor_ms"]
+    assert millis(changed["events"][0]["start_utc"]) == zero - 46 * DAY
+    assert all(
+        millis(e["end_utc"]) <= zero + 30 * DAY
+        for e in changed["events"]
+        if e["kind"] != "overnight"
+    )
+
+
+def test_calendar_change_adjusts_daylight_saving_without_shifting_queensland_hours(
+    exported,
+):
+    from datetime import date
+
+    journey = exported[0]
+    scheduled = generator.schedule_journey(journey, date(2027, 1, 15))
+    original_drives = [e for e in journey["events"] if e["kind"] == "drive"]
+    shifted_drives = [e for e in scheduled["events"] if e["kind"] == "drive"]
+    deltas = {
+        millis(new["start_utc"]) - millis(old["start_utc"])
+        for old, new in zip(original_drives, shifted_drives)
+        if old["start_local"][11:19] == "09:00:00"
+    }
+    # Different regions need different UTC shifts across seasons.
+    assert max(deltas) - min(deltas) >= 3_600_000

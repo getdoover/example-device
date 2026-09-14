@@ -283,7 +283,7 @@ function renderSamples() {
   const zero = sampling.zero_snapshot;
   const zeroMs = Date.parse(sampling.source_zero_utc);
   if (zeroMs >= viewStart && zeroMs <= viewEnd) {
-    L.circleMarker([zero.location.lat, zero.location.long], { radius: 9, color: '#fff', weight: 3, fillColor: '#4267a9', fillOpacity: 1 }).addTo(sampleLayer).bindTooltip('Zero · 46 days into the journey');
+    L.circleMarker([zero.location.lat, zero.location.long], { radius: 9, color: '#fff', weight: 3, fillColor: '#4267a9', fillOpacity: 1 }).addTo(sampleLayer).bindTooltip(`Zero · midnight ${sampling.calendar.anchor_date} · ${sampling.calendar.anchor_timezone}`);
   }
 }
 function setDay(value) {
@@ -403,7 +403,7 @@ async function initialise() {
       sampling = policy;
       tracking = recorded.samples.map((sample) => ({ ...sample, sourceMs: Date.parse(sample.source_utc) }));
       $('sample-controls').hidden = false;
-      $('sampling-summary').textContent = `${tracking.length.toLocaleString()} tracking samples. Hourly before the past week; every 10 minutes through the next 30 days, plus arrivals and departures. Blue: history. Pink: future.`;
+      $('sampling-summary').textContent = `${tracking.length.toLocaleString()} tracking samples. Zero: midnight ${policy.calendar.anchor_date} (${policy.calendar.anchor_timezone}). Hourly before the past week; every 10 minutes through the next 30 days, plus arrivals and departures. Blue: history. Pink: future.`;
       $('show-samples').addEventListener('change', () => { renderSamples(); updatePlayback(); });
       $('go-zero').addEventListener('click', () => {
         setDay('all');

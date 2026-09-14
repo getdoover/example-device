@@ -40,6 +40,7 @@
     "deployment_config"
   ],
   "duration_ms": 2592000000,
+  "required_anchor_ms": 1789308000000,
   "interpolation": [],
   "inputs": []
 }

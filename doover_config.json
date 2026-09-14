@@ -61,7 +61,7 @@
           "x-hidden": false,
           "type": "integer",
           "x-required": true,
-          "description": "Fixed creation-day midnight as epoch milliseconds",
+          "description": "Fixed local midnight as epoch milliseconds; match dataset required_anchor_ms when present",
           "x-position": 3
         },
         "idle_interval_seconds": {

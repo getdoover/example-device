@@ -6,7 +6,7 @@ The [camera-device example](devices/camera-device/README.md) contains a Blender 
 
 ## How it works
 
-Organisation provisioning creates the device and installs the processor and display apps. Only the processor runs. Provisioning supplies the repository, dataset slug, full commit SHA, and `anchor_ms`: midnight on the organisation's creation day in its timezone. Device creation and app installation are handled outside this repository.
+Organisation provisioning creates the device and installs the processor and display apps. Only the processor runs. Provisioning supplies the repository, dataset slug, full commit SHA, and `anchor_ms`: the intended midnight zero. Generic examples use the organisation creation day in its timezone. Calendar-dependent examples declare `required_anchor_ms`; provisioning must use that value or regenerate the dataset for the intended date and timezone. Device creation and app installation are handled outside this repository.
 
 Dataset timestamps are millisecond offsets from that fixed anchor. Negative offsets become history; positive offsets become future data. The processor stores the anchor, pinned revision, and progress in device tags so interruptions resume automatically and repository edits do not change existing installations.
 
@@ -32,7 +32,7 @@ Each `devices/<slug>/` contains `config.json` and `channels/<channel>.json`. Cha
 
 The water example covers 90 past days and 30 future days. Historical spacing is 30 minutes within 14 days, two hours from 14–45 days, and six hours from 45–90 days, with extra points around input events. Future samples are 30 minutes apart with no scripted inputs. Host Configurator and customer installation bindings are excluded.
 
-The vehicle example samples hourly before the past week and every 10 minutes from the past week through day +30. Arrival and departure samples preserve ignition changes and short trips. Odometer and engine hours integrate the full road route. Ferry movement adds neither. GPS and telemetry remain on the same recorded observation between samples.
+The vehicle example samples hourly before the past week and every 10 minutes from the past week through day +30. Arrival and departure samples preserve ignition changes and short trips. Odometer and engine hours integrate the full road route. Ferry movement adds neither. GPS and telemetry remain on the same recorded observation between samples. Its calendar is generated for an explicit installation date and timezone, including daylight-saving changes. See [vehicle installation dates](devices/vehicle-tracker/README.md#generate-for-another-installation-date).
 
 Messages can declare `attachments` with a dataset-relative `path` under `attachments/`, `filename`, `content_type`, byte `size`, and `sha256`. The processor downloads files from the pinned GitHub revision only when their message is due, verifies their bytes, reserves a backdated message, and uploads missing native attachments. Retries inspect stored files before uploading again. Attachment data stays outside the Lambda package.
 
@@ -62,7 +62,7 @@ The generator is deterministic. With matplotlib installed, `--charts` writes pre
 
 GitHub Actions uses `getdoover/workflows/.github/workflows/app.yml@main` to check, build, and publish the processor to production and staging. Pushes to `main` create releases; pull requests targeting `main` create alpha releases. The workflow can also be started manually. Doover authentication uses GitHub OIDC, with no API token stored in the repository. Both environments receive the same `package.zip`, built by `build.sh` from runtime dependencies and processor source only.
 
-Install the processor from `doover_config.json` with `repository`, `dataset_slug`, `dataset_revision`, and `anchor_ms`. The pinned dataset must be publicly accessible; downloads are anonymous.
+Install the processor from `doover_config.json` with `repository`, `dataset_slug`, `dataset_revision`, and `anchor_ms`. The pinned dataset must be publicly accessible; downloads are anonymous. For a dataset with `required_anchor_ms`, install a processor version supporting that field and use the matching anchor. Validation reports the required value; runtime rejects a mismatch before telemetry or playback-state writes.
 
 Use one Lambda function for all example devices with reserved concurrency **1** and `lambda:GetFunctionConcurrency` permission on that function. The processor checks this before cloud writes. Defaults subscribe to `ui_cmds` and `dv-ui-sub`, with a `rate(1 minute)` schedule. All devices share that capacity.
 

@@ -17,7 +17,7 @@ This folder keeps the finished journey and the files needed to review it. The fu
 
 Server Runner has a task named **Vehicle tracker route visualiser**, serving this folder at <http://127.0.0.1:8765/visualiser.html>. Start or restart that saved task. In another checkout, serve this folder with a local HTTP server. The map uses online Leaflet assets and OpenStreetMap tiles; the journey and telemetry are local and need no Google key.
 
-Select a day or search for a store, town or overnight stay. The itinerary shows each event's local time. **Go to zero** selects the state 46 elapsed days into the trip. **Show exported tracking samples** displays historical observations in blue and future observations in pink. Playback holds at the latest exported observation so GPS, ignition, speed, odometer and engine hours stay together. Disable that checkbox for continuous playback along the original route geometry.
+Select a day or search for a store, town or overnight stay. The itinerary shows each event's local time. **Go to zero** selects midnight on the installation date, 46 elapsed days into the exported history window. **Show exported tracking samples** displays historical observations in blue and future observations in pink. Playback holds at the latest exported observation so GPS, ignition, speed, odometer and engine hours stay together. Disable that checkbox for continuous playback along the original route geometry.
 
 ## Regenerate the outputs
 
@@ -30,19 +30,19 @@ uv run example-device validate devices/vehicle-tracker
 uv run pytest tests/test_vehicle_dataset.py -q
 ```
 
-The sampler reads `journey.json` and preserves the apps and static UI from the existing `../config.json` and `../channels/ui_state.json`. It writes the device channels, sampling policy and tracking observations. `--output` can target a different folder; `--template` selects the existing device whose app settings and static UI to use. The CSV exporter reads the same full journey. Neither tool needs Google credentials, API caches, catalogue research or review reports.
+The sampler reads `journey.json`, reschedules its events for the saved installation calendar, and preserves the apps and static UI from the existing `../config.json` and `../channels/ui_state.json`. It writes the calendar-adjusted journey, device channels, sampling policy and tracking observations. Route geometry and driving durations remain unchanged. Use `--anchor-date YYYY-MM-DD --anchor-timezone Australia/Brisbane` to generate for a new midnight zero. The resulting device config records the required anchor, preventing accidental reuse on a different date. `--output` can target a different folder; `--template` selects the existing device whose app settings and static UI to use. The CSV exporter reads the same full journey. Neither tool needs Google credentials, API caches, catalogue research or review reports.
 
 The device channels contain one JSON record per line so the full history fits the runtime's 8 MiB per-file download limit. See [the vehicle guide](../README.md) for cadence, counters and replay behaviour.
 
 ## Route assumptions
 
-Road travel is between 09:00 and 17:00 at the vehicle's location in the source itinerary, with a 30-minute visit at every physical Bunnings site. Store opening hours are not enforced. Static travel durations do not model future traffic or road closures.
+Road travel is between 09:00 and 17:00 at the vehicle's location in the installation itinerary, with a 30-minute visit at every physical Bunnings site. Store opening hours are not enforced. Static travel durations do not model future traffic or road closures.
 
 The Tasmania transfer uses an overnight cabin, with a modelled 20:00 departure. The ferry's geometry and duration are preserved. Dated sailing and accommodation availability are not verified. The Mount Isa to Alice Springs section uses the Barkly Highway and an overnight at Barkly Homestead.
 
 Google road-access points can differ from a store or hotel's map coordinate. The route retains those measured points without adding invented connectors. Odometer integrates road distances, not straight lines between sparse GPS observations. The ferry moves GPS while ignition is off and adds no road odometer or engine hours.
 
-The exact 76-day export includes every journey movement and store visit. The final 90 minutes parked at the last hotel remain only in the complete raw itinerary.
+The exact 76-day export includes every journey movement and store visit. The final 9.5 hours parked at the last hotel remain only in the complete raw itinerary.
 
 ## Local working files
 

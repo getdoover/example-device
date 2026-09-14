@@ -126,6 +126,14 @@ class Runtime:
             or invocation_budget_seconds <= 0
         ):
             raise ValueError("Runtime intervals and batch budget must be positive")
+        if (
+            dataset.config.required_anchor_ms is not None
+            and anchor_ms != dataset.config.required_anchor_ms
+        ):
+            raise ValueError(
+                f"Dataset was scheduled for anchor_ms={dataset.config.required_anchor_ms}; "
+                "regenerate it for the requested installation date and timezone"
+            )
         self.dataset = dataset
         self.transport = transport
         self.anchor_ms = anchor_ms

@@ -1,6 +1,6 @@
 # Vehicle tracker example
 
-This device visits all 334 active physical Bunnings sites in the captured Australian retail and trade directories. The full route takes 76 days. The exported dataset places zero exactly 46 elapsed days after departure, leaving 30 days of future telemetry.
+This device visits all 334 active physical Bunnings sites in the captured Australian retail and trade directories. The full route takes 76 days. The exported dataset places zero at midnight on 14 September 2026 in Australia/Brisbane. It includes 46 elapsed days of history and 30 days of future telemetry. Stationary padding before the first 09:00 visit keeps the history window exact.
 
 | Period relative to zero | Tracking interval |
 | --- | --- |
@@ -28,9 +28,9 @@ The Maintenance Manager shows matching odometer and engine hours, trailing 14-da
 
 ## Time and replay
 
-The source calendar starts on 4 January 2027 at 09:00 in Tasmania. Zero corresponds to `2027-02-18T22:00:00Z`. Channel timestamps are millisecond offsets from zero. The runtime adds the installation's anchor to those offsets, including `device_time` and maintenance dates. The device-time UI uses a numeric timestamp so it follows the installed example date.
+The installed calendar starts on 30 July 2026 in Tasmania. Zero corresponds to `2026-09-13T14:00:00Z`, or midnight on 14 September in Queensland. `config.json` requires `anchor_ms=1789308000000`. The processor rejects a different anchor before importing history. Channel timestamps are millisecond offsets from zero. The runtime adds the installation's anchor to those offsets, including `device_time` and maintenance dates. The device-time UI uses a numeric timestamp so it follows the installed example date.
 
-The export ends at exactly +30 days. The original final overnight has 90 more minutes because the journey ends in a different timezone. Those parked minutes remain in raw data. Every road leg, ferry leg, and store visit is included in the export. Road-hour checks apply to the source itinerary; replay rebases its timestamps to the installation anchor without rescheduling for a new calendar or timezone.
+The export ends at exactly +30 days. The complete final overnight has 9.5 more hours because the export ends before the following morning. Those parked minutes remain in raw data. Every road leg, ferry leg, and store visit is included in the export. The generator schedules each day on the installation calendar, retains road and visit durations, and recalculates overnight and ferry waits. It checks road travel at every navigation vertex and at intervals no longer than 60 seconds, using coordinate-based IANA timezones. If the saved daily route cannot fit 09:00–17:00 on the requested dates, generation fails and that day needs replanning. The runtime does not reschedule the exported calendar.
 
 ## Regenerate and verify
 
@@ -40,10 +40,25 @@ Run from the repository root. Sampling reads the saved full route and the device
 uv run python tools/generate_vehicle_tracker.py
 uv run python tools/export_vehicle_itinerary.py
 uv run example-device validate devices/vehicle-tracker
-uv run example-device simulate devices/vehicle-tracker --anchor-ms 1893456000000 --offset-ms 0 --viewed
+uv run example-device simulate devices/vehicle-tracker --anchor-ms 1789308000000 --offset-ms 0 --viewed
 uv run pytest tests/test_vehicle_dataset.py -q
 ```
 
 `config.json` declares the inert display apps. `channels/` contains the portable UI, paired telemetry and location records, and deployment settings. Provisioning and cloud installation are separate from this local dataset. The original reference device is unchanged.
 
 The [raw folder guide](raw/README.md) lists the versioned outputs and explains how to regenerate telemetry and CSV summaries without the local research files. [sampling-policy.json](raw/sampling-policy.json) records the exact window, counts, baseline, and final state. [tracking-samples.json](raw/tracking-samples.json) connects each exported observation to its raw event.
+
+## Generate for another installation date
+
+Run `uv sync --frozen` to install the generator's development dependencies, including the coordinate timezone database.
+
+```sh
+uv run python tools/generate_vehicle_tracker.py --anchor-date 2026-09-14 --anchor-timezone Australia/Brisbane
+uv run python tools/export_vehicle_itinerary.py
+uv run example-device validate devices/vehicle-tracker
+uv run example-device simulate devices/vehicle-tracker --anchor-ms 1789308000000 --offset-ms 32400000 --viewed
+```
+
+Replace the date and timezone with the intended midnight zero. Use the resulting `required_anchor_ms` from validation as the processor's `anchor_ms`, then publish and pin the regenerated dataset commit. Omitting the date reuses the saved calendar, so ordinary regeneration is deterministic. The timezone identifies midnight zero; each road point still uses its own geographical timezone.
+
+Verify the installed local departure times, not only whether the imported messages equal the export. Changing app configuration does not migrate an existing device: playback pins its revision and anchor in tags. Stop the processor, remove only its imported messages and saved playback state, then re-import the corrected revision. Preserve installed app identities and unrelated channels.
