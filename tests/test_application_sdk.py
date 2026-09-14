@@ -216,6 +216,8 @@ async def test_sdk_default_phase_does_not_overwrite_runtime_final_phase(
     await app._dispatch_invocation(payload(backend, "on_deployment"), None)
     own = backend.aggregates["tag_values"]["example_device"]
     assert own["phase"] == phase
+    assert own["import_complete"] is True
+    assert own["import_progress"] == 100
     assert own["playback_state"]["phase"] == phase
     assert app.tag_manager._dirty == {}
     assert app.tag_manager._update_tags is False
@@ -389,4 +391,90 @@ async def test_failed_playback_does_not_claim_online(monkeypatch):
     backend = SDKBackend()
     backend.fail_batches = True
     await make_app(monkeypatch, backend)._dispatch_invocation(payload(backend), None)
-    assert "doover_connection" not in backend.aggregates
+    assert "status" not in backend.aggregates["doover_connection"]
+    own = backend.aggregates["tag_values"]["example_device"]
+    assert own["import_complete"] is False
+    assert own["import_progress"] == 0
+
+
+@pytest.mark.asyncio
+async def test_import_progress_is_visible_before_upload_and_resumes(monkeypatch):
+    backend = SDKBackend()
+    app = make_app(monkeypatch, backend)
+    monkeypatch.setattr(
+        application,
+        "fetch_dataset",
+        AsyncMock(return_value=make_dataset(history_count=250)),
+    )
+    result, _ = await app._dispatch_invocation(payload(backend, "on_deployment"), None)
+    assert result["phase"] == "importing"
+    own = backend.aggregates["tag_values"]["example_device"]
+    assert own["import_complete"] is False
+    assert 0 < own["import_progress"] < 100
+    assert backend.aggregates["doover_connection"]["config"]["display"] == "OfflineOnly"
+    first_upload = next(
+        i for i, call in enumerate(backend.calls) if call[1] == "/agents/messages"
+    )
+    progress_writes = [
+        data["example_device"]
+        for method, path, data in backend.calls[:first_upload]
+        if method == "PATCH"
+        and path.endswith("/tag_values/aggregate")
+        and "import_progress" in data.get("example_device", {})
+    ]
+    assert progress_writes
+    assert progress_writes[0] == {"import_complete": False, "import_progress": 0}
+
+    app = make_app(monkeypatch, backend, ANCHOR + 60_000)
+    monkeypatch.setattr(
+        application,
+        "fetch_dataset",
+        AsyncMock(return_value=make_dataset(history_count=250)),
+    )
+    result, _ = await app._dispatch_invocation(payload(backend), None)
+    assert result["phase"] == "active"
+    own = backend.aggregates["tag_values"]["example_device"]
+    assert own["import_complete"] is True
+    assert own["import_progress"] == 100
+    assert backend.aggregates["doover_connection"]["config"]["display"] == "Always"
+    assert len(backend.messages) == 250
+
+
+def test_exported_import_panel_uses_native_progress_and_visibility():
+    from example_device.config import manifest
+
+    schema = manifest()["example_device"]["ui_schema"]
+    assert schema["hidden"] == "$tag.app().import_complete:boolean:false"
+    assert schema["position"] == 0
+    assert schema["defaultOpen"] is True
+    progress = schema["children"]["import_progress"]
+    assert progress["form"] == "linearGauge"
+    assert progress["currentValue"] == "$tag.app().import_progress:number:0"
+    assert progress["ranges"][0]["colour"] == "orange"
+    assert progress["notGraphable"] is True
+    assert progress["position"] == 0
+
+
+@pytest.mark.asyncio
+async def test_import_stays_visible_until_aggregate_catchup_succeeds(monkeypatch):
+    backend = SDKBackend()
+    app = make_app(monkeypatch, backend, ANCHOR + 3_600_000)
+
+    async def fail_catchup(method, path, *, data=None, **kwargs):
+        if method == "PATCH" and data.get("counter", {}).get("value") == 10:
+            raise OSError("aggregate catchup failed")
+        return await backend.request(method, path, data=data, **kwargs)
+
+    monkeypatch.setattr(app.api, "_request", fail_catchup)
+    await app._dispatch_invocation(payload(backend), None)
+    assert isinstance(app.failure, OSError)
+    assert len(backend.messages) == 5
+    own = backend.aggregates["tag_values"]["example_device"]
+    assert own["import_complete"] is False
+    assert own["import_progress"] < 100
+
+    app = make_app(monkeypatch, backend, ANCHOR + 3_600_000)
+    result, _ = await app._dispatch_invocation(payload(backend), None)
+    assert result["phase"] == "exhausted"
+    assert backend.aggregates["tag_values"]["example_device"]["import_complete"] is True
+    assert len(backend.messages) == 5

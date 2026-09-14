@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import time
 from bisect import bisect_right
+from collections.abc import Awaitable, Callable
 from contextlib import AbstractAsyncContextManager
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Protocol, Sequence
@@ -255,15 +256,29 @@ class Runtime:
         return end
 
     async def run(
-        self, now_ms: int, observed: bool = False, force: bool = False
+        self,
+        now_ms: int,
+        observed: bool = False,
+        force: bool = False,
+        on_progress: Callable[[PlaybackState, int], Awaitable[None]] | None = None,
     ) -> RunResult:
         from .commands import resume_pending_commands
 
         if now_ms < self.anchor_ms:
             raise ValueError("Cannot initialize playback before its fixed anchor")
+        offset = min(now_ms - self.anchor_ms, self.dataset.duration_ms)
+        eligible_end = bisect_right(self.offsets, offset)
+
+        async def checkpoint(state: PlaybackState) -> None:
+            await self.transport.write_state(state.to_dict())
+            if on_progress is not None:
+                await on_progress(state, eligible_end)
+
         deadline = time.monotonic() + self.invocation_budget_seconds
         async with self.transport.serialized():
             state = await self._read_state()
+            if state.phase != "initializing" and on_progress is not None:
+                await on_progress(state, eligible_end)
             await resume_pending_commands(self, state)
             interval = self.active_interval_ms if observed else self.idle_interval_ms
             if state.phase == "exhausted":
@@ -283,12 +298,12 @@ class Runtime:
                     and now_ms < self.anchor_ms + self.dataset.duration_ms
                 ):
                     if observation_changed:
-                        await self.transport.write_state(state.to_dict())
+                        await checkpoint(state)
                     return RunResult(state.phase, state.cursor, 0, False, due_ms)
 
             if state.phase == "initializing":
                 # Save the installation identity before any external channel write.
-                await self.transport.write_state(state.to_dict())
+                await checkpoint(state)
                 for entry in self.entries[: bisect_right(self.offsets, 0)]:
                     if entry.kind == "aggregate" or (
                         entry.timestamp == 0 and entry.apply_to_aggregate
@@ -296,10 +311,8 @@ class Runtime:
                         await self._apply_aggregate_entry(entry)
                 state.phase = "importing"
                 state.aggregate_cursor = bisect_right(self.offsets, 0)
-                await self.transport.write_state(state.to_dict())
+                await checkpoint(state)
 
-            offset = min(now_ms - self.anchor_ms, self.dataset.duration_ms)
-            eligible_end = bisect_right(self.offsets, offset)
             published = 0
             for _ in range(self.max_batches):
                 if state.cursor >= eligible_end:
@@ -334,7 +347,7 @@ class Runtime:
                     ):
                         break
                     state.cursor += 1
-                await self.transport.write_state(state.to_dict())
+                await checkpoint(state)
                 if state.cursor != batch_end:
                     return RunResult(state.phase, state.cursor, published, True, now_ms)
                 if state.cursor == start:
@@ -356,7 +369,7 @@ class Runtime:
                     if entry.kind == "aggregate" or entry.apply_to_aggregate:
                         await self._apply_aggregate_entry(entry)
                 state.aggregate_cursor = aggregate_end
-                await self.transport.write_state(state.to_dict())
+                await checkpoint(state)
             if state.aggregate_cursor < eligible_end:
                 return RunResult(state.phase, state.cursor, published, True, now_ms)
             if observed:
@@ -374,7 +387,7 @@ class Runtime:
             state.phase = (
                 "exhausted" if offset >= self.dataset.duration_ms else "active"
             )
-            await self.transport.write_state(state.to_dict())
+            await checkpoint(state)
             next_due = None if state.phase == "exhausted" else now_ms + interval
             return RunResult(state.phase, state.cursor, published, False, next_due)
 
