@@ -10,11 +10,13 @@ Organisation provisioning creates the device and installs the processor and disp
 
 Dataset timestamps are millisecond offsets from that fixed anchor. Negative offsets become history; positive offsets become future data. The processor stores the anchor, pinned revision, and progress in device tags so interruptions resume automatically and repository edits do not change existing installations.
 
-The processor initializes aggregates, imports history in batches, and catches up to the current time. A one-minute schedule checks for work. Publication normally happens every 30 minutes. While the device page is being viewed, one-minute updates interpolate declared numeric tags without adding extra history. Other values change at authored points.
+The processor initializes current aggregates and imports existing messages newest first. The device becomes usable after the newest 50 messages across its channels are confirmed, or all available messages if fewer exist. The setup panel closes and controls unlock at that point. Older history continues backwards on subsequent runs without changing current values or control selections. Existing installations retain confirmed progress when upgrading from the older import order.
+
+A one-minute schedule checks for work. Live playback takes priority over background history. Publication normally happens every 30 minutes. While the device page is being viewed, one-minute updates interpolate declared numeric tags without adding extra history. Other values change at authored points.
 
 Successful playback checks refresh the device's `doover_connection` heartbeat, even when no telemetry is due. Doover shows the example as online and marks it offline after five minutes without a heartbeat. This reflects processor availability; exhausted telemetry remains a separate playback state.
 
-Historical input events and their effects are precomputed. Live inputs update selected values, acknowledgements, and input logs without changing telemetry. Imported RPCs cannot execute as live commands. At the dataset's end, publication stops and the device shows `exhausted`; inputs can still be acknowledged.
+Historical input events and their effects are precomputed. Live inputs update selected values, acknowledgements, and input logs without changing telemetry. Imported RPCs cannot execute as live commands. At the dataset's end, live publication stops and the device shows `exhausted`; remaining older history still imports and inputs can still be acknowledged.
 
 ## Data layout
 
@@ -36,7 +38,7 @@ The vehicle example samples hourly before the past week and every 10 minutes fro
 
 Messages can declare `attachments` with a dataset-relative `path` under `attachments/`, `filename`, `content_type`, byte `size`, and `sha256`. The processor downloads files from the pinned GitHub revision only when their message is due, verifies their bytes, reserves a backdated message, and uploads missing native attachments. Retries inspect stored files before uploading again. Attachment data stays outside the Lambda package.
 
-Attachment imports checkpoint after at most five capture messages per batch. A 180-second work budget is checked between batches; it does not cancel an in-progress network request. With the default four batches per invocation, the camera's initial 169 captures take nine scheduled invocations. Later hours add one capture with four files.
+Attachment imports checkpoint after at most five capture messages per batch. A 180-second work budget is checked between batches; it does not cancel an in-progress network request. Each invocation publishes at most four batches by default. Setup can span several invocations when attachments are involved, but does not wait for the complete camera history. Later hours add one capture with four files.
 
 Optional `attachment_references` replace null fields in message or aggregate data with uploaded URLs. Each reference names a `channel`, message `id`, attachment `filename`, and `path` within the data. Path segments can be object keys or array indices. Native camera history uses attachment filenames directly and needs no URL references.
 

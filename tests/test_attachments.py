@@ -435,7 +435,9 @@ async def test_attachment_identity_collision_stops_before_download_or_overwrite(
     _, _, blobs = camera_fixture()
     loads = []
     await playback(api, blobs, loads).run(ANCHOR)
-    backend.aggregates["tag_values"]["processor"]["playback_state"]["cursor"] = 0
+    state = backend.aggregates["tag_values"]["processor"]["playback_state"]
+    state["history"]["cursor"] = state["history"]["end"]
+    state["history"]["recent_count"] = 0
     message = next(iter(backend.messages.values()))
     message["data"]["position"] = "unrelated record"
     writes = len([call for call in backend.calls if call[0] in ("POST", "PUT")])
@@ -482,6 +484,46 @@ def multi_camera_fixture():
     return config, {"camera_images": [message]}, blobs
 
 
+async def test_camera_ready_at_fifty_and_background_upload_retry_keeps_files_unique(
+    attachment_server,
+):
+    backend, api = attachment_server
+    config, channels, blobs = multi_camera_fixture()
+    template = channels["camera_images"][0]
+    channels["camera_images"] = [
+        {**deepcopy(template), "timestamp": -index * 1_000, "id": f"capture-{index}"}
+        for index in range(60, 0, -1)
+    ]
+    fixture = config, channels, blobs
+    loads = []
+    for expected in (20, 40):
+        result = await playback(api, blobs, loads, fixture).run(ANCHOR)
+        assert result.phase == "importing"
+        assert len(backend.messages) == expected
+    result = await playback(api, blobs, loads, fixture).run(ANCHOR)
+    assert result.phase == "active" and result.needs_continuation
+    assert len(backend.messages) == 50
+    assert len(backend.uploads) == 200
+
+    backend.fail_upload_response = True
+    with pytest.raises(HTTPError):
+        await playback(api, blobs, loads, fixture).run(ANCHOR)
+    state = backend.aggregates["tag_values"]["processor"]["playback_state"]
+    assert state["phase"] == "active"
+    assert state["history"]["recent_count"] == 50
+    result = await playback(api, blobs, loads, fixture).run(ANCHOR)
+    assert result.phase == "active" and not result.needs_continuation
+    assert len(backend.messages) == 60
+    assert len(backend.uploads) == 240
+    assert all(
+        len(message["attachments"]) == 4 for message in backend.messages.values()
+    )
+    assert [
+        message["data"]["_example_device"]["record_id"]
+        for message in backend.messages.values()
+    ] == [f"capture-{index}" for index in range(1, 61)]
+
+
 @pytest.mark.parametrize("failure", ["lost_response", "partial"])
 async def test_four_file_camera_message_retries_without_duplicate_attachments(
     attachment_server, failure
@@ -500,9 +542,9 @@ async def test_four_file_camera_message_retries_without_duplicate_attachments(
         await playback(api, blobs, loads, fixture).run(ANCHOR)
     first_uploads = len(backend.uploads)
     assert first_uploads == (4 if failure == "lost_response" else 2)
-    assert (
-        backend.aggregates["tag_values"]["processor"]["playback_state"]["cursor"] == 0
-    )
+    state = backend.aggregates["tag_values"]["processor"]["playback_state"]
+    assert state["history"]["cursor"] == state["history"]["end"]
+    assert state["history"]["recent_count"] == 0
     result = await playback(api, blobs, loads, fixture).run(ANCHOR)
     assert result.phase == "active"
     assert len(backend.messages) == 1 and len(backend.uploads) == 4

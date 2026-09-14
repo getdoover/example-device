@@ -164,7 +164,7 @@
         "import_progress": {
           "name": "import_progress",
           "type": "uiVariable",
-          "displayString": "History importing",
+          "displayString": "Preparing device",
           "showActivity": false,
           "form": "linearGauge",
           "position": 0,
@@ -180,7 +180,7 @@
               "max": 100,
               "colour": "orange",
               "show_on_graph": true,
-              "label": "History importing"
+              "label": "Preparing device"
             }
           ],
           "notGraphable": true

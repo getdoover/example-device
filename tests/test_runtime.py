@@ -6,19 +6,21 @@ import asyncio
 from contextlib import asynccontextmanager
 from copy import deepcopy
 from dataclasses import replace
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
-from example_device.dataset import AttachmentFile, parse_dataset
+from example_device.dataset import AttachmentFile, load_directory, parse_dataset
 from example_device.runtime import (
     DOOVER_EPOCH_MS,
     Runtime,
     WriteResult,
     stable_message_id,
 )
-from example_device.state import StateError
-from example_device.timeline import merge_data
+from example_device.simulator import MemoryTransport
+from example_device.state import PlaybackState, StateError
+from example_device.timeline import merge_data, reconstruct_aggregates
 
 ANCHOR = DOOVER_EPOCH_MS + 20_000_000_000
 
@@ -212,6 +214,245 @@ async def test_history_baseline_and_future_are_separate():
         assert message.data["_example_device"]["origin"] == "dataset"
 
 
+async def test_newest_fifty_make_device_ready_before_older_history():
+    from example_device.commands import CommandRequest
+
+    transport = FakeTransport()
+    dataset = make_dataset(history_count=250)
+    result = await make_runtime(transport, dataset).run(ANCHOR)
+    assert result.phase == "active"
+    assert result.needs_continuation
+    messages = list(transport.messages.values())
+    assert len(messages) == 50
+    assert [item.timestamp_ms for item in messages] == [
+        ANCHOR - index * 1_000 for index in range(1, 51)
+    ]
+    assert transport.aggregates["tag_values"]["counter"]["value"] == 0
+    command = await make_runtime(transport, dataset).acknowledge(
+        CommandRequest(123, ANCHOR + 1, "counter", "set_limit", 42)
+    )
+    assert command.status == "acknowledged"
+
+    # Resume in a fresh runtime before the next normal publication is due.
+    resumed = await make_runtime(transport, dataset, max_batches=1).run(ANCHOR + 60_000)
+    assert resumed.phase == "active" and resumed.needs_continuation
+    assert len(transport.messages) == 101  # 100 history rows and one command log.
+    assert transport.aggregates["ui_cmds"]["counter"]["set_limit"] == 42
+
+    assert transport.aggregates["tag_values"]["counter"]["value"] == 0
+
+    # Live data takes priority while the older history is still incomplete.
+    await make_runtime(transport, dataset, max_batches=1).run(
+        ANCHOR + 1_800_000, observed=True
+    )
+    assert transport.aggregates["tag_values"]["counter"]["value"] == 10
+    while (
+        await make_runtime(transport, dataset).run(ANCHOR + 1_800_000)
+    ).needs_continuation:
+        pass
+    assert len(transport.messages) == 252
+    assert transport.aggregates["tag_values"]["counter"]["value"] == 10
+    assert transport.aggregates["ui_cmds"]["counter"]["set_limit"] == 42
+
+
+@pytest.mark.parametrize("count", [0, 1, 49, 50, 51])
+async def test_readiness_counts_messages_and_not_aggregate_records(count):
+    transport = FakeTransport()
+    result = await make_runtime(transport, make_dataset(history_count=count)).run(
+        ANCHOR
+    )
+    assert result.phase == "active"
+    assert len(transport.messages) == min(count, 50)
+    assert result.needs_continuation is (count > 50)
+
+
+async def test_failed_fiftieth_message_keeps_setup_locked_until_confirmed():
+    from example_device.commands import CommandError, CommandRequest
+
+    transport = FakeTransport()
+    dataset = make_dataset(history_count=105)
+    runtime = make_runtime(transport, dataset)
+    transport.partial_fail_id = runtime._entry_ids[("tag_values", 55)]
+    result = await runtime.run(ANCHOR)
+    assert result.phase == "importing"
+    assert len(transport.messages) == 49
+    with pytest.raises(CommandError, match="still preparing"):
+        await make_runtime(transport, dataset).acknowledge(
+            CommandRequest(123, ANCHOR + 1, "counter", "set_limit", 42)
+        )
+    result = await make_runtime(transport, dataset).run(ANCHOR)
+    assert result.phase == "active" and result.needs_continuation
+    assert result.published == 1
+    assert len(transport.messages) == 50
+
+
+async def test_exhausted_playback_still_finishes_older_history():
+    transport = FakeTransport()
+    dataset = make_dataset(history_count=155)
+    now = ANCHOR + dataset.duration_ms
+    result = await make_runtime(transport, dataset).run(now)
+    assert result.phase == "exhausted" and result.needs_continuation
+    assert len(transport.messages) == 50
+    assert transport.aggregates["tag_values"]["counter"]["value"] == 20
+    baseline = deepcopy(transport.aggregates)
+    while (await make_runtime(transport, dataset).run(now)).needs_continuation:
+        assert transport.aggregates == baseline
+    assert transport.aggregates == baseline
+    assert len(transport.messages) == 157
+
+
+@pytest.mark.parametrize(
+    "history",
+    [
+        None,
+        {"floor": 0, "cursor": -1, "end": 5, "recent_count": 0},
+        {"floor": 3, "cursor": 2, "end": 5, "recent_count": 0},
+        {"floor": 0, "cursor": 6, "end": 5, "recent_count": 0},
+        {"floor": 0, "cursor": 5, "end": 5, "recent_count": 1},
+        {"floor": 0, "cursor": 1, "end": 500, "recent_count": 50},
+    ],
+)
+async def test_invalid_saved_history_fails_before_channel_writes(history):
+    transport = FakeTransport()
+    await make_runtime(transport).run(ANCHOR)
+    transport.state["history"] = history
+    batches, aggregates = len(transport.batches), deepcopy(transport.aggregates)
+    with pytest.raises(StateError):
+        await make_runtime(transport).run(ANCHOR + 60_000)
+    assert len(transport.batches) == batches
+    assert transport.aggregates == aggregates
+
+
+@pytest.mark.parametrize(
+    "failure", ["lose_checkpoint_once", "lose_message_response_once"]
+)
+async def test_background_retry_preserves_readiness_and_imports_every_row_once(failure):
+    transport = FakeTransport()
+    dataset = make_dataset(history_count=155)
+    await make_runtime(transport, dataset).run(ANCHOR)
+    saved = deepcopy(transport.state["history"])
+    setattr(transport, failure, True)
+    with pytest.raises(OSError):
+        await make_runtime(transport, dataset).run(ANCHOR + 60_000)
+    assert transport.state["history"] == saved
+    assert transport.state["phase"] == "active"
+    while (
+        await make_runtime(transport, dataset).run(ANCHOR + 60_000)
+    ).needs_continuation:
+        pass
+    assert len(transport.messages) == 155
+    assert transport.state["history"]["cursor"] == 0
+    assert transport.aggregates["tag_values"]["counter"]["value"] == 0
+
+
+async def test_upgrade_an_ascending_import_keeps_confirmed_rows_and_reverses_the_rest():
+    transport = FakeTransport()
+    dataset = make_dataset(history_count=155)
+    runtime = make_runtime(transport, dataset)
+    # Reproduce the durable state left by the previous runtime after 50 rows.
+    async with transport.serialized():
+        for entry in runtime.entries:
+            if entry.timestamp == 0:
+                await runtime._apply_aggregate_entry(entry)
+        await transport.publish_messages(
+            [await runtime._write(entry) for entry in runtime.entries[:50]]
+        )
+        await transport.write_state(
+            PlaybackState(
+                dataset.config.slug,
+                "a" * 40,
+                ANCHOR,
+                phase="importing",
+                cursor=50,
+                aggregate_cursor=157,
+            ).to_dict()
+        )
+    assert transport.state["version"] == 1
+    old_ids = set(transport.messages)
+    result = await make_runtime(transport, dataset).run(ANCHOR)
+    assert result.phase == "active" and result.needs_continuation
+    assert transport.state["version"] == 2
+    assert transport.state["history"]["floor"] == 50
+    assert len(transport.messages) == 100
+    assert [item.timestamp_ms for item in transport.batches[1]] == [
+        ANCHOR - index * 1_000 for index in range(1, 51)
+    ]
+    while (await make_runtime(transport, dataset).run(ANCHOR)).needs_continuation:
+        pass
+    assert len(transport.messages) == 155
+    assert all(
+        (item.channel, item.message_id) not in old_ids
+        for batch in transport.batches[1:]
+        for item in batch
+    )
+
+
+async def test_upgrade_an_active_device_does_not_reimport_or_reset_controls():
+    transport = FakeTransport()
+    await make_runtime(transport).run(ANCHOR)
+    transport.state["version"] = 1
+    transport.state.pop("history")
+    transport.aggregates["ui_cmds"]["counter"]["set_limit"] = 42
+    batches = len(transport.batches)
+    result = await make_runtime(transport).run(ANCHOR + 60_000)
+    assert result.phase == "active" and not result.needs_continuation
+    assert len(transport.batches) == batches
+    assert transport.aggregates["ui_cmds"]["counter"]["set_limit"] == 42
+
+
+@pytest.mark.parametrize("slug", ["water-storage", "vehicle-tracker", "camera-device"])
+async def test_shipped_device_ready_at_fifty_then_completes_reverse_history(slug):
+    directory = Path(__file__).resolve().parents[1] / "devices" / slug
+    dataset = load_directory(directory)
+    anchor = dataset.config.required_anchor_ms or 1789308000000
+    transport = MemoryTransport(directory)
+
+    def runtime():
+        return Runtime(
+            dataset,
+            transport,
+            anchor_ms=anchor,
+            revision="a" * 40,
+            installation_id="reverse-history-test",
+        )
+
+    expected = [
+        entry
+        for entry in reversed(runtime().entries)
+        if entry.kind == "message" and entry.timestamp <= 0
+    ]
+    ready = False
+    for invocation in range(100):
+        current = runtime()
+        result = await current.run(anchor)
+        if not ready and result.phase == "active":
+            ready = True
+            assert len(transport.messages) == 50
+            assert [item.timestamp_ms for item in transport.messages.values()] == [
+                anchor + entry.timestamp for entry in expected[:50]
+            ]
+            assert transport.aggregates == reconstruct_aggregates(
+                dataset,
+                0,
+                anchor_ms=anchor,
+                message_ids=current.ids,
+            )
+            baseline = deepcopy(transport.aggregates)
+        if ready:
+            assert transport.aggregates == baseline
+        if not result.needs_continuation:
+            break
+    else:
+        pytest.fail("Background history did not finish")
+    assert ready
+    assert len(transport.messages) == len(expected)
+    assert [item.timestamp_ms for item in transport.messages.values()] == [
+        anchor + entry.timestamp for entry in expected
+    ]
+    if slug == "camera-device":
+        assert len(transport.attachments) == 169 * 4
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "failure", ["lose_checkpoint_once", "lose_message_response_once"]
@@ -234,10 +475,12 @@ async def test_partial_batch_advances_only_contiguous_successes():
     transport = FakeTransport()
     dataset = make_dataset(history_count=105)
     runtime = make_runtime(transport, dataset, max_batches=1)
-    transport.partial_fail_id = runtime._entry_ids[("tag_values", 2)]
+    transport.partial_fail_id = runtime._entry_ids[("tag_values", 102)]
     partial = await runtime.run(ANCHOR)
     assert partial.needs_continuation
-    assert transport.state["cursor"] == 2
+    assert partial.phase == "importing"
+    assert transport.state["history"]["cursor"] == 103
+    assert transport.state["history"]["recent_count"] == 2
     while (
         result := await make_runtime(transport, dataset, max_batches=1).run(ANCHOR)
     ).needs_continuation:
@@ -441,7 +684,12 @@ async def test_late_installation_bounds_aggregate_catchup_across_invocations():
         result = await make_runtime(transport, dataset, max_batches=1).run(
             ANCHOR + 120_000
         )
-        assert len(transport.aggregate_writes) - previous_writes <= 50
+        catchup_writes = [
+            data
+            for channel, data, _ in transport.aggregate_writes[previous_writes:]
+            if channel == "tag_values" and data["counter"]["value"] > 0
+        ]
+        assert len(catchup_writes) <= 50
         calls += 1
         assert calls < 10
         if not result.needs_continuation:
@@ -476,9 +724,10 @@ async def test_attachment_batches_checkpoint_at_most_five_captures():
     result = await make_runtime(
         transport, attachment_history_dataset(), max_batches=2
     ).run(ANCHOR)
-    assert result.needs_continuation and result.cursor == 10
+    assert result.needs_continuation and result.published == 10
     assert [len(batch) for batch in transport.batches] == [5, 5]
-    assert transport.state["cursor"] == 10
+    assert transport.state["history"]["cursor"] == 14
+    assert transport.state["history"]["recent_count"] == 10
     while (
         result := await make_runtime(
             transport, attachment_history_dataset(), max_batches=2
@@ -495,6 +744,7 @@ async def test_invocation_budget_yields_after_confirmed_attachment_batch(monkeyp
     monkeypatch.setattr(runtime, "time", SimpleNamespace(monotonic=lambda: next(clock)))
     transport = FakeTransport()
     result = await make_runtime(transport, attachment_history_dataset()).run(ANCHOR)
-    assert result.needs_continuation and result.cursor == 5
-    assert transport.state["cursor"] == 5
+    assert result.needs_continuation and result.published == 5
+    assert transport.state["history"]["cursor"] == 19
+    assert transport.state["history"]["recent_count"] == 5
     assert len(transport.messages) == 5

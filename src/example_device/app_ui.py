@@ -19,13 +19,13 @@ class ExampleUI(
 ):
     tags: ExampleTags
     progress = ui.NumericVariable(
-        "History importing",
+        "Preparing device",
         name="import_progress",
         value=ExampleTags.import_progress,
         units="%",
         precision=0,
         form=ui.Widget.linear,
-        ranges=[ui.Range("History importing", 0, 100, ui.Colour.orange)],
+        ranges=[ui.Range("Preparing device", 0, 100, ui.Colour.orange)],
         colour=ui.Colour.orange,
         graphable=False,
         show_activity=False,

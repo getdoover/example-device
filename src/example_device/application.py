@@ -18,7 +18,7 @@ from .concurrency import verify_lambda_serialization
 from .config import ExampleDeviceConfig
 from .runtime import IMPORT_MARKER, Runtime
 from .source import fetch_attachment, fetch_dataset, validate_source
-from .state import PlaybackState
+from .state import READY_HISTORY_MESSAGES, PlaybackState
 
 
 def is_page_observed(aggregate, now_ms):
@@ -152,9 +152,12 @@ class ExampleDevice(Application):
 
     async def _report_import_progress(self, state, total):
         complete = state.phase in ("active", "exhausted")
-        # Keep the panel visible until both history and current aggregates commit.
-        completed = min(state.cursor, state.aggregate_cursor)
-        progress = 100 if complete else min(99, 100 * completed // max(1, total))
+        # Setup needs current aggregates and the newest 50 confirmed messages.
+        # Older history continues after the panel closes and controls unlock.
+        completed = state.history.recent_count if state.history is not None else 0
+        progress = (
+            100 if complete else min(99, 100 * completed // READY_HISTORY_MESSAGES)
+        )
         await self.api.update_channel_aggregate(
             "tag_values",
             {self.app_key: {"import_complete": complete, "import_progress": progress}},

@@ -279,7 +279,8 @@ async def test_sdk_swallowed_handler_error_is_retained_for_entrypoint_retry(
     assert result is None
     assert isinstance(app.failure, OSError)
     state = backend.aggregates["tag_values"]["example_device"]["playback_state"]
-    assert state["cursor"] == 0
+    assert state["history"]["cursor"] == state["history"]["end"]
+    assert state["history"]["recent_count"] == 0
     assert state["phase"] == "importing"
 
 
@@ -407,11 +408,14 @@ async def test_import_progress_is_visible_before_upload_and_resumes(monkeypatch)
         AsyncMock(return_value=make_dataset(history_count=250)),
     )
     result, _ = await app._dispatch_invocation(payload(backend, "on_deployment"), None)
-    assert result["phase"] == "importing"
+    assert result["phase"] == "active"
+    assert result["needs_continuation"] is True
+    assert len(backend.messages) == 50
     own = backend.aggregates["tag_values"]["example_device"]
-    assert own["import_complete"] is False
-    assert 0 < own["import_progress"] < 100
-    assert backend.aggregates["doover_connection"]["config"]["display"] == "OfflineOnly"
+    assert own["import_complete"] is True
+    assert own["import_progress"] == 100
+    assert backend.aggregates["doover_connection"]["config"]["display"] == "Always"
+    assert backend.aggregates["tag_values"]["counter"]["value"] == 0
     first_upload = next(
         i for i, call in enumerate(backend.calls) if call[1] == "/agents/messages"
     )
@@ -468,7 +472,7 @@ async def test_import_stays_visible_until_aggregate_catchup_succeeds(monkeypatch
     monkeypatch.setattr(app.api, "_request", fail_catchup)
     await app._dispatch_invocation(payload(backend), None)
     assert isinstance(app.failure, OSError)
-    assert len(backend.messages) == 5
+    assert len(backend.messages) == 0
     own = backend.aggregates["tag_values"]["example_device"]
     assert own["import_complete"] is False
     assert own["import_progress"] < 100

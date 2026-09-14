@@ -11,7 +11,13 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Protocol, Sequence
 
 from .dataset import AttachmentFile, DataPath, Dataset, Entry
-from .state import PlaybackState, StateError
+from .state import (
+    READY_HISTORY_MESSAGES,
+    HistoryProgress,
+    Phase,
+    PlaybackState,
+    StateError,
+)
 from .timeline import (
     ordered_entries,
     rebase_data,
@@ -191,6 +197,8 @@ class Runtime:
             self.entries
         ):
             raise StateError("Stored cursor exceeds the pinned dataset")
+        if state.history is not None and state.history.end > state.cursor:
+            raise StateError("History overlaps unprocessed forward playback")
         input_keys = {
             f"{item.app_key}.{item.method}" for item in self.dataset.config.inputs
         }
@@ -255,6 +263,79 @@ class Runtime:
                 return index + 1
         return end
 
+    async def _publish(self, entries: Sequence[Entry]) -> dict[int, bool]:
+        writes = [
+            await self._write(entry) for entry in entries if entry.kind == "message"
+        ]
+        results = await self.transport.publish_messages(writes) if writes else ()
+        outcomes = {result.message_id: result.success for result in results}
+        if len(outcomes) != len(results) or set(outcomes) != {
+            item.message_id for item in writes
+        }:
+            raise RuntimeError(
+                "Message transport returned an incomplete or duplicate result set"
+            )
+        return outcomes
+
+    async def _backfill(
+        self,
+        state: PlaybackState,
+        history: HistoryProgress,
+        *,
+        deadline: float,
+        checkpoint: Callable[[PlaybackState], Awaitable[None]],
+        ready_phase: Phase,
+        now_ms: int,
+        next_due_ms: int | None,
+        batches_remaining: int,
+        published: int = 0,
+    ) -> RunResult:
+        # Only called after current aggregates and forward messages have caught up.
+        if state.phase == "importing" and history.ready:
+            state.phase = ready_phase
+            await checkpoint(state)
+        for _ in range(batches_remaining):
+            if not history.pending or time.monotonic() >= deadline:
+                break
+            indices = []
+            messages = captures = 0
+            limit = (
+                50 if history.ready else READY_HISTORY_MESSAGES - history.recent_count
+            )
+            for index in range(history.cursor - 1, history.floor - 1, -1):
+                entry = self.entries[index]
+                indices.append(index)
+                messages += entry.kind == "message"
+                captures += bool(entry.attachments)
+                if messages == limit or captures == ATTACHMENT_MESSAGES_PER_BATCH:
+                    break
+            outcomes = await self._publish([self.entries[index] for index in indices])
+            published += sum(outcomes.values())
+            for index in indices:
+                entry = self.entries[index]
+                if entry.kind == "message":
+                    if not outcomes[self._entry_ids[(entry.channel, entry.index)]]:
+                        break
+                    history.recent_count = min(
+                        READY_HISTORY_MESSAGES, history.recent_count + 1
+                    )
+                history.cursor = index
+            became_ready = state.phase == "importing" and history.ready
+            if became_ready:
+                state.phase = ready_phase
+            await checkpoint(state)
+            # Return as soon as setup is usable. Older uploads start next run.
+            if became_ready or history.cursor != indices[-1]:
+                break
+        pending = history.pending
+        return RunResult(
+            state.phase,
+            state.cursor,
+            published,
+            pending,
+            now_ms if pending else next_due_ms,
+        )
+
     async def run(
         self,
         now_ms: int,
@@ -281,26 +362,9 @@ class Runtime:
                 await on_progress(state, eligible_end)
             await resume_pending_commands(self, state)
             interval = self.active_interval_ms if observed else self.idle_interval_ms
-            if state.phase == "exhausted":
-                return RunResult(state.phase, state.cursor, 0, False, None)
             newly_observed = observed and not state.last_observed
             observation_changed = observed != state.last_observed
             state.last_observed = observed
-            if (
-                state.phase == "active"
-                and state.last_publication_ms is not None
-                and not newly_observed
-                and not force
-            ):
-                due_ms = state.last_publication_ms + interval
-                if (
-                    now_ms < due_ms
-                    and now_ms < self.anchor_ms + self.dataset.duration_ms
-                ):
-                    if observation_changed:
-                        await checkpoint(state)
-                    return RunResult(state.phase, state.cursor, 0, False, due_ms)
-
             if state.phase == "initializing":
                 # Save the installation identity before any external channel write.
                 await checkpoint(state)
@@ -313,6 +377,45 @@ class Runtime:
                 state.aggregate_cursor = bisect_right(self.offsets, 0)
                 await checkpoint(state)
 
+            if state.history is None:
+                # Upgrade older ascending imports without replaying confirmed rows.
+                end = eligible_end if state.phase == "importing" else state.cursor
+                state.history = HistoryProgress(state.cursor, end, end)
+                state.cursor = end
+                await checkpoint(state)
+            history = state.history
+            ready_phase: Phase = (
+                "exhausted" if offset >= self.dataset.duration_ms else "active"
+            )
+            batches_remaining = self.max_batches
+
+            async def backfill(published: int, next_due: int | None) -> RunResult:
+                return await self._backfill(
+                    state,
+                    history,
+                    deadline=deadline,
+                    checkpoint=checkpoint,
+                    ready_phase=ready_phase,
+                    now_ms=now_ms,
+                    next_due_ms=next_due,
+                    published=published,
+                    batches_remaining=batches_remaining,
+                )
+
+            if state.phase == "exhausted":
+                return await backfill(0, None)
+            if (
+                state.phase == "active"
+                and state.last_publication_ms is not None
+                and not newly_observed
+                and not force
+            ):
+                due_ms = state.last_publication_ms + interval
+                if now_ms < due_ms and offset < self.dataset.duration_ms:
+                    if observation_changed:
+                        await checkpoint(state)
+                    return await backfill(0, due_ms)
+
             published = 0
             for _ in range(self.max_batches):
                 if state.cursor >= eligible_end:
@@ -323,22 +426,9 @@ class Runtime:
                     return RunResult(state.phase, state.cursor, published, True, now_ms)
                 batch_end = self._history_batch_end(state.cursor, eligible_end)
                 entries = self.entries[state.cursor : batch_end]
-                writes = [
-                    await self._write(entry)
-                    for entry in entries
-                    if entry.kind == "message"
-                ]
-                results = (
-                    await self.transport.publish_messages(writes) if writes else ()
-                )
-                outcomes = {result.message_id: result.success for result in results}
-                if len(outcomes) != len(results) or set(outcomes) != {
-                    item.message_id for item in writes
-                }:
-                    raise RuntimeError(
-                        "Message transport returned an incomplete or duplicate result set"
-                    )
-                published += sum(result.success for result in results)
+                outcomes = await self._publish(entries)
+                batches_remaining -= 1
+                published += sum(outcomes.values())
                 start = state.cursor
                 for entry in entries:
                     if (
@@ -384,12 +474,11 @@ class Runtime:
                 if patch:
                     await self.transport.patch_aggregate("tag_values", patch)
             state.last_publication_ms = now_ms
-            state.phase = (
-                "exhausted" if offset >= self.dataset.duration_ms else "active"
-            )
+            if state.phase != "importing":
+                state.phase = ready_phase
             await checkpoint(state)
-            next_due = None if state.phase == "exhausted" else now_ms + interval
-            return RunResult(state.phase, state.cursor, published, False, next_due)
+            next_due = None if ready_phase == "exhausted" else now_ms + interval
+            return await backfill(published, next_due)
 
     async def _apply_aggregate_entry(self, entry: Entry) -> None:
         data = rebase_data(entry, self.anchor_ms, self.ids)
