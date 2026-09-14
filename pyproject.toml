@@ -26,7 +26,15 @@ packages = ["src/example_device"]
 include = ["/src/example_device", "/pyproject.toml", "/uv.lock", "/doover_config.json", "/schemas"]
 
 [dependency-groups]
-dev = ["pytest>=8.3", "pytest-asyncio>=0.26", "jsonschema>=4.23", "ruff>=0.11", "build>=1.2"]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.26",
+    "jsonschema>=4.23",
+    "ruff>=0.11",
+    "build>=1.2",
+    "timezonefinder==8.3.0",
+    "timezonefinder-data==1.2026.3",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

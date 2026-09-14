@@ -28,7 +28,7 @@ class ExampleDeviceConfig(config.Schema):
     anchor_ms = config.Integer(
         "Start timestamp",
         name="anchor_ms",
-        description="Fixed creation-day midnight as epoch milliseconds",
+        description="Fixed local midnight as epoch milliseconds; match dataset required_anchor_ms when present",
         required=True,
     )
     idle_interval_seconds = config.Integer(

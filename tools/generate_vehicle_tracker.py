@@ -1,6 +1,6 @@
 """Sample the saved Bunnings journey into portable vehicle-tracker channels.
 
-No Google requests or cloud writes. The raw route remains unchanged.
+No Google requests or cloud writes. Route geometry stays unchanged; the itinerary uses the installation calendar.
 """
 
 from __future__ import annotations
@@ -13,7 +13,8 @@ import json
 import math
 from collections import Counter
 from copy import deepcopy
-from datetime import datetime, timezone
+from datetime import date, datetime, time, timedelta, timezone
+from functools import lru_cache
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -130,6 +131,139 @@ class RoadRoute:
         return position, travelled, speed, heading
 
 
+@lru_cache(maxsize=1)
+def coordinate_timezones():
+    from timezonefinder import TimezoneFinder
+
+    return TimezoneFinder(in_memory=True)
+
+
+@lru_cache(maxsize=500_000)
+def coordinate_timezone(lat, lon):
+    name = coordinate_timezones().timezone_at(lat=lat, lng=lon)
+    if name is None:
+        raise ValueError(f"No timezone for road coordinate {lat}, {lon}")
+    return ZoneInfo(name)
+
+
+def validate_road_calendar(journey):
+    """Check every navigation vertex and at most 60 seconds between vertices."""
+    routes = {r["id"]: r for r in journey["routes"]}
+    for event in journey["events"]:
+        if event["kind"] != "drive":
+            continue
+        start = datetime.fromisoformat(event["start_utc"])
+        route = RoadRoute(routes[event["route_id"]])
+        for elapsed, _, duration, _, points, lengths in route.steps:
+            times = [
+                duration * length / lengths[-1] if lengths[-1] else 0
+                for length in lengths
+            ]
+            samples = [(0, points[0])]
+            for i in range(1, len(points)):
+                intervals = max(1, math.ceil((times[i] - times[i - 1]) / 60))
+                for n in range(1, intervals + 1):
+                    f = n / intervals
+                    point = tuple(
+                        a + f * (b - a) for a, b in zip(points[i - 1], points[i])
+                    )
+                    samples.append(
+                        (times[i - 1] + f * (times[i] - times[i - 1]), point)
+                    )
+            samples.append((duration, points[-1]))
+            for seconds, point in samples:
+                local = (start + timedelta(seconds=elapsed + seconds)).astimezone(
+                    coordinate_timezone(*point)
+                )
+                if not time(9) <= local.time() <= time(17):
+                    raise ValueError(
+                        f"{event['id']}: road coordinate {point} is outside 09:00–17:00 "
+                        f"at {local.isoformat()}; replan this day for the requested calendar"
+                    )
+
+
+def schedule_journey(journey, anchor_date, anchor_timezone="Australia/Brisbane"):
+    """Reuse route durations and daily stops on an explicit installation calendar.
+
+    Overnight and ferry waits absorb UTC-offset changes. Fail if the saved daily
+    route no longer fits, instead of silently moving driving outside local hours.
+    """
+    result = deepcopy(journey)
+    zero = datetime.combine(anchor_date, time(), ZoneInfo(anchor_timezone))
+    if zero.timestamp() * 1000 < 1735689600000:
+        raise ValueError("Installation anchor must be on or after the Doover epoch")
+    first_date = anchor_date - timedelta(days=46)
+    events = [e for e in result["events"] if e.get("purpose") != "history_padding"]
+
+    def local_hour(day, hour, zone):
+        return datetime.combine(
+            first_date + timedelta(days=day - 1), time(hour), ZoneInfo(zone)
+        ).astimezone(timezone.utc)
+
+    cursor = local_hour(1, 9, events[0]["timezone"])
+    for event in events:
+        start = cursor
+        if event["kind"] == "overnight":
+            cursor = local_hour(event["day"] + 1, 9, event["end_timezone"])
+        elif event["kind"] == "wait":
+            hour = 20 if event["purpose"] == "ferry_check_in" else 9
+            cursor = local_hour(event["day"], hour, event["end_timezone"])
+        else:
+            cursor += timedelta(seconds=event["duration_s"])
+        if cursor <= start:
+            raise ValueError(
+                f"{event['id']}: calendar leaves no time for the planned stay"
+            )
+        event.update(
+            start_utc=start.isoformat(),
+            end_utc=cursor.isoformat(),
+            start_local=start.astimezone(ZoneInfo(event["timezone"])).isoformat(),
+            end_local=cursor.astimezone(ZoneInfo(event["end_timezone"])).isoformat(),
+            duration_s=(cursor - start).total_seconds(),
+        )
+        if event["kind"] == "drive":
+            for field in ("start_local", "end_local"):
+                local = datetime.fromisoformat(event[field])
+                if not time(9) <= local.time() <= time(17):
+                    raise ValueError(
+                        f"{event['id']}: road travel at {local.isoformat()} is outside 09:00–17:00; "
+                        "replan this day's stops for the requested calendar"
+                    )
+    history_start = zero.astimezone(timezone.utc) - timedelta(days=46)
+    first = events[0]
+    padding = {
+        **first,
+        "id": "history-padding",
+        "kind": "wait",
+        "purpose": "history_padding",
+        "start_utc": history_start.isoformat(),
+        "end_utc": first["start_utc"],
+        "start_local": history_start.astimezone(
+            ZoneInfo(first["timezone"])
+        ).isoformat(),
+        "end_local": first["start_local"],
+        "duration_s": (
+            datetime.fromisoformat(first["start_utc"]) - history_start
+        ).total_seconds(),
+        "notes": "Stationary history baseline before the first 09:00 Bunnings visit.",
+    }
+    if padding["duration_s"] <= 0:
+        raise ValueError("History window starts after the first visit")
+    result["events"] = [padding, *events]
+    result["metadata"]["start_date"] = first_date.isoformat()
+    result["metadata"]["calendar"] = {
+        "anchor_date": anchor_date.isoformat(),
+        "anchor_timezone": anchor_timezone,
+        "anchor_ms": round(zero.timestamp() * 1000),
+        "policy": "46 elapsed days of history before local midnight; 30 elapsed days of future data. "
+        "Daily road trips start at 09:00 local, with original route and visit durations. "
+        "Overnight waits use the installation calendar and IANA daylight-saving rules.",
+    }
+    result["summary"]["duration_s"] = (cursor - history_start).total_seconds()
+    validate_road_calendar(result)
+    return result
+
+
 class JourneySampler:
     def __init__(self, journey):
         self.journey = journey
@@ -137,7 +271,7 @@ class JourneySampler:
         self.starts = [utc_ms(e["start_utc"]) for e in self.events]
         self.ends = [utc_ms(e["end_utc"]) for e in self.events]
         self.start = self.starts[0]
-        self.zero = self.start + HISTORY
+        self.zero = journey["metadata"]["calendar"]["anchor_ms"]
         self.end = self.zero + FUTURE
         self.routes = {r["id"]: RoadRoute(r) for r in journey["routes"]}
         self.places = {
@@ -324,6 +458,7 @@ def generate(sampler, applications, ui):
         "apps": deepcopy(applications),
         "channels": ["ui_state", "tag_values", "location", "deployment_config"],
         "duration_ms": FUTURE,
+        "required_anchor_ms": sampler.zero,
         "interpolation": [],
         "inputs": [],
     }
@@ -364,7 +499,12 @@ def load_journey(raw):
 
 def write_json(path, data):
     path.parent.mkdir(parents=True, exist_ok=True)
-    if path.parent.name == "channels":
+    if path.name == "journey.json":
+        path.write_text(
+            json.dumps(data, separators=(",", ":"), ensure_ascii=False, allow_nan=False)
+            + "\n"
+        )
+    elif path.parent.name == "channels":
         # One record per line keeps long histories below the loader's 8 MiB limit.
         records = [
             json.dumps(row, separators=(",", ":"), ensure_ascii=False, allow_nan=False)
@@ -377,9 +517,32 @@ def write_json(path, data):
         )
 
 
-def export(raw, output, template=DEFAULT_OUTPUT):
+def export(
+    raw, output, template=DEFAULT_OUTPUT, anchor_date=None, anchor_timezone=None
+):
     from example_device.dataset import load_directory, parse_dataset
 
+    journey = json.loads((raw / "journey.json").read_text())
+    if journey["metadata"]["status"] != "complete":
+        raise ValueError("Journey is incomplete")
+    saved_calendar = journey["metadata"].get("calendar", {})
+    if anchor_date is None:
+        if "anchor_date" not in saved_calendar:
+            raise ValueError("Specify --anchor-date for the installation calendar")
+        anchor_date = date.fromisoformat(saved_calendar["anchor_date"])
+    anchor_timezone = anchor_timezone or saved_calendar.get(
+        "anchor_timezone", "Australia/Brisbane"
+    )
+    journey = schedule_journey(journey, anchor_date, anchor_timezone)
+    # Validate the complete window before publishing any generated files.
+    export_end = journey["metadata"]["calendar"]["anchor_ms"] + FUTURE
+    if any(
+        utc_ms(e["end_utc"]) > export_end
+        for e in journey["events"]
+        if e["kind"] != "overnight"
+    ):
+        raise ValueError("The export would omit movement or visits")
+    write_json(raw / "journey.json", journey)
     journey, digest = load_journey(raw)
     sampler = JourneySampler(journey)
     template_config = json.loads((template / "config.json").read_text())
@@ -406,6 +569,7 @@ def export(raw, output, template=DEFAULT_OUTPUT):
     policy = {
         "journey_sha256": digest,
         "source_start_utc": iso_ms(sampler.start),
+        "calendar": journey["metadata"]["calendar"],
         "source_zero_utc": iso_ms(sampler.zero),
         "source_export_end_utc": iso_ms(sampler.end),
         "history_days": 46,
@@ -425,7 +589,7 @@ def export(raw, output, template=DEFAULT_OUTPUT):
             },
         ],
         "extra_samples": "Exact event starts and ends, deduplicated against regular ticks.",
-        "cutoff_note": "Export ends exactly 76 elapsed days after departure. Any remaining final parked accommodation stays in raw data only; its length is source_parked_tail_omitted_ms. All travel and all 334 visits are included.",
+        "cutoff_note": "Export includes 46 elapsed days before midnight zero and 30 elapsed days after it. Stationary padding before the first 09:00 visit keeps the history window exact. Any remaining final parked accommodation stays in raw data only; its length is source_parked_tail_omitted_ms. All travel and all 334 visits are included.",
         "source_parked_tail_omitted_ms": sampler.ends[-1] - sampler.end,
         "counter_baseline": {"odometer_km": 0, "run_hours": 0},
         "counter_policy": "Integrate Google road step distances and durations, normalizing step distance totals to route totals. Ferry movement adds neither road odometer nor engine hours.",
@@ -489,8 +653,17 @@ def main():
         default=DEFAULT_OUTPUT,
         help="Existing example config and static UI to preserve",
     )
+    parser.add_argument(
+        "--anchor-date",
+        type=date.fromisoformat,
+        help="Installation zero date (YYYY-MM-DD); reuse the saved calendar when omitted",
+    )
+    parser.add_argument(
+        "--anchor-timezone",
+        help="IANA timezone for midnight zero; defaults to Australia/Brisbane",
+    )
     args = parser.parse_args()
-    export(args.raw, args.output, args.template)
+    export(args.raw, args.output, args.template, args.anchor_date, args.anchor_timezone)
 
 
 if __name__ == "__main__":

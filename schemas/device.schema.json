@@ -298,6 +298,11 @@
           }
         ]
       }
+    },
+    "required_anchor_ms": {
+      "type": "integer",
+      "minimum": 1735689600000,
+      "description": "Exact anchor used to schedule this calendar-dependent dataset. Regenerate for a different installation date or timezone."
     }
   },
   "required": [

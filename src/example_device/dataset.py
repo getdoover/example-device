@@ -111,6 +111,7 @@ class DatasetConfig:
     interpolation: tuple[Interpolation, ...] = ()
     inputs: tuple[Input, ...] = ()
     processor: ProcessorConfig | None = None
+    required_anchor_ms: int | None = None
 
 
 @dataclass(frozen=True)
@@ -347,7 +348,7 @@ def _config(raw: Any) -> DatasetConfig:
     _fields(
         raw,
         {"schema_version", "slug", "name", "apps", "channels", "duration_ms"},
-        {"interpolation", "inputs", "processor"},
+        {"interpolation", "inputs", "processor", "required_anchor_ms"},
         "config",
     )
     if _integer(raw["schema_version"], "schema_version") != 1:
@@ -461,6 +462,9 @@ def _config(raw: Any) -> DatasetConfig:
         tuple(interpolation),
         tuple(inputs),
         processor,
+        _integer(raw["required_anchor_ms"], "required_anchor_ms", 1735689600000)
+        if "required_anchor_ms" in raw
+        else None,
     )
 
 
