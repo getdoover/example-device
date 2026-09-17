@@ -1,4 +1,4 @@
-"""PyDoover channel operations for the serialized playback runtime."""
+"""PyDoover channel operations for the coordinated playback runtime."""
 
 from __future__ import annotations
 
@@ -32,7 +32,7 @@ IMMUTABLE_FIELDS = frozenset(
 
 
 class DooverTransport:
-    """Only construct after verifying Lambda reserved concurrency equals one."""
+    """Only construct while the caller holds a best-effort device lease."""
 
     def __init__(
         self,
@@ -42,13 +42,11 @@ class DooverTransport:
         app_key,
         app_keys,
         repository,
-        serialization_verified,
+        device_lock_held,
         attachment_loader: Callable[[AttachmentFile], Awaitable[bytes]] | None = None,
     ):
-        if serialization_verified is not True:
-            raise ValueError(
-                "Cloud serialization must be verified before constructing the transport"
-            )
+        if device_lock_held is not True:
+            raise ValueError("Claim the device lease before constructing the transport")
         if app_key in app_keys:
             raise ValueError("Processor state namespace cannot also be a dataset app")
         self.api = api
@@ -62,7 +60,7 @@ class DooverTransport:
 
     @asynccontextmanager
     async def serialized(self):
-        # Lambda supplies cross-process exclusion; this lock prevents local reentrancy.
+        # The caller claims a device lease; this lock prevents local reentrancy.
         async with self._lock:
             yield
 
@@ -201,7 +199,6 @@ class DooverTransport:
             file = files.get(attachment.filename)
             if (
                 file is None
-                or attachment.filename in urls
                 or (
                     attachment.size != file.size
                     or attachment.content_type != file.content_type
@@ -212,7 +209,9 @@ class DooverTransport:
                 raise ValueError(
                     "Stored attachment metadata differs from the pinned manifest"
                 )
-            urls[attachment.filename] = attachment.url
+            # Overlapping multipart retries can append the same pinned file.
+            # Accept matching metadata and consistently reuse its first URL.
+            urls.setdefault(attachment.filename, attachment.url)
         return urls
 
     async def ensure_attachments(self, item):

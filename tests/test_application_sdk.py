@@ -137,7 +137,7 @@ def payload(backend, kind="on_schedule", data=None):
 
 
 def make_app(monkeypatch, backend, now=ANCHOR):
-    app = application.ExampleDevice(serialization_verified=True)
+    app = application.ExampleDevice()
     monkeypatch.setattr(app.api, "setup", AsyncMock())
     monkeypatch.setattr(app.api, "close", AsyncMock())
     monkeypatch.setattr(app.api, "_request", backend.request)
@@ -288,9 +288,6 @@ def test_public_entrypoint_rethrows_after_real_sdk_handles_failure(monkeypatch):
     backend = SDKBackend()
     backend.fail_batches = True
     app = make_app(monkeypatch, backend)
-    monkeypatch.setattr(
-        application, "verify_lambda_serialization", lambda context: None
-    )
     monkeypatch.setattr(application, "ExampleDevice", lambda **kwargs: app)
     with pytest.raises(OSError, match="temporary storage failure"):
         application.invoke(payload(backend), None)
@@ -336,9 +333,6 @@ def test_public_entrypoint_ignores_subscription_noise_before_sdk_setup(
 ):
     backend = SDKBackend()
     app = make_app(monkeypatch, backend)
-    monkeypatch.setattr(
-        application, "verify_lambda_serialization", lambda context: None
-    )
     monkeypatch.setattr(application, "ExampleDevice", lambda **kwargs: app)
     if kind in ("imported_rpc", "command_log"):
         rpc = rpc_message(backend, marker={"origin": "dataset"})
@@ -482,3 +476,105 @@ async def test_import_stays_visible_until_aggregate_catchup_succeeds(monkeypatch
     assert result["phase"] == "exhausted"
     assert backend.aggregates["tag_values"]["example_device"]["import_complete"] is True
     assert len(backend.messages) == 5
+
+
+async def test_overlapping_schedules_skip_count_and_resume(monkeypatch):
+    import asyncio
+
+    backend = SDKBackend()
+    first = make_app(monkeypatch, backend)
+    second = make_app(monkeypatch, backend)
+    entered = asyncio.Event()
+    release = asyncio.Event()
+
+    async def slow_dataset(*args):
+        entered.set()
+        await release.wait()
+        return make_dataset()
+
+    monkeypatch.setattr(application, "fetch_dataset", slow_dataset)
+    task = asyncio.create_task(first._dispatch_invocation(payload(backend), None))
+    await asyncio.wait_for(entered.wait(), 2)
+    try:
+        result, _ = await second._dispatch_invocation(payload(backend), None)
+        assert result == {"status": "collision"}
+        assert backend.messages == {}
+        assert (
+            backend.aggregates["tag_values"]["example_device"]["collision_count"] == 1
+        )
+    finally:
+        release.set()
+        await task
+    own = backend.aggregates["tag_values"]["example_device"]
+    assert "update_lock" not in own
+    assert own["playback_state"]["phase"] == "active"
+    assert len(backend.messages) == 3
+    result, _ = await second._dispatch_invocation(payload(backend), None)
+    assert result["phase"] == "active"
+    assert len(backend.messages) == 3
+
+
+async def test_collision_retains_button_command_for_retry(monkeypatch):
+    from example_device.concurrency import DeviceBusy
+
+    backend = SDKBackend()
+    backend.aggregates["tag_values"]["example_device"] = {
+        "update_lock": {"owner": "other", "expires_at_ms": ANCHOR + 10_000},
+    }
+    app = make_app(monkeypatch, backend)
+    event = payload(backend, "on_message_create", rpc_message(backend))
+    await app._dispatch_invocation(event, None)
+    assert isinstance(app.failure, DeviceBusy)
+    assert not any(
+        method == "PATCH" and "/messages/" in path for method, path, _ in backend.calls
+    )
+    assert (
+        backend.aggregates["tag_values"]["example_device"]["update_lock"]["owner"]
+        == "other"
+    )
+
+
+async def test_handler_failure_releases_device_for_next_run(monkeypatch):
+    backend = SDKBackend()
+    backend.fail_batches = True
+    app = make_app(monkeypatch, backend)
+    await app._dispatch_invocation(payload(backend), None)
+    assert isinstance(app.failure, OSError)
+    assert "update_lock" not in backend.aggregates["tag_values"]["example_device"]
+    backend.fail_batches = False
+    result, _ = await make_app(monkeypatch, backend)._dispatch_invocation(
+        payload(backend), None
+    )
+    assert result["phase"] == "active"
+    assert len(backend.messages) == 3
+
+
+async def test_lock_deadline_covers_remaining_lambda_lifetime(monkeypatch):
+    backend = SDKBackend()
+    app = make_app(monkeypatch, backend)
+    app.context = SimpleNamespace(get_remaining_time_in_millis=lambda: 123_000)
+    await app._dispatch_invocation(payload(backend), None)
+    claims = [
+        data["example_device"]["update_lock"]
+        for method, path, data in backend.calls
+        if method == "PATCH"
+        and path.endswith("/tag_values/aggregate")
+        and data.get("example_device", {}).get("update_lock")
+    ]
+    assert len(claims) == 1
+    assert claims[0]["expires_at_ms"] == ANCHOR + 183_000
+
+
+def test_public_entrypoint_retries_colliding_command(monkeypatch):
+    from example_device.concurrency import DeviceBusy
+
+    backend = SDKBackend()
+    backend.aggregates["tag_values"]["example_device"] = {
+        "update_lock": {"owner": "other", "expires_at_ms": ANCHOR + 10_000},
+    }
+    app = make_app(monkeypatch, backend)
+    monkeypatch.setattr(application, "ExampleDevice", lambda **kwargs: app)
+    with pytest.raises(DeviceBusy):
+        application.invoke(
+            payload(backend, "on_message_create", rpc_message(backend)), None
+        )

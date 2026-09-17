@@ -334,7 +334,7 @@ def playback(api, blobs, loads, fixture=None):
         app_key="processor",
         app_keys=["camera"],
         repository="sample/repo",
-        serialization_verified=True,
+        device_lock_held=True,
         attachment_loader=loader,
     )
     return Runtime(
@@ -562,3 +562,24 @@ async def test_four_file_camera_message_retries_without_duplicate_attachments(
         for _, filename, _, raw in backend.uploads
     )
     assert len(loads) == (4 if failure == "lost_response" else 6)
+
+
+async def test_repeated_matching_attachment_after_overlap_does_not_block_resume(
+    attachment_server,
+):
+    backend, api = attachment_server
+    _, _, blobs = camera_fixture()
+    loads = []
+    backend.fail_upload_response = True
+    with pytest.raises(HTTPError):
+        await playback(api, blobs, loads).run(ANCHOR)
+    message = next(m for m in backend.messages.values() if m["attachments"])
+    original = deepcopy(message["attachments"][0])
+    repeated = {**original, "url": original["url"] + "?repeated"}
+    message["attachments"].append(repeated)
+    previous_uploads = len(backend.uploads)
+    result = await playback(api, blobs, loads).run(ANCHOR)
+    assert result.phase == "active"
+    assert message["data"]["url"] == original["url"]
+    assert len(backend.uploads) == previous_uploads + 1
+    assert len(backend.messages) == 2
