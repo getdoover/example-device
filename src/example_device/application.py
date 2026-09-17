@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+import uuid
 from dataclasses import asdict
 from functools import partial
 
@@ -14,7 +15,7 @@ from pydoover.tags.manager import LogMode
 from .adapter import STATE_TAG, DooverTransport
 from .app_ui import ExampleTags, ExampleUI
 from .commands import CommandError, CommandRequest
-from .concurrency import verify_lambda_serialization
+from .concurrency import DeviceBusy, DeviceLease
 from .config import ExampleDeviceConfig
 from .runtime import IMPORT_MARKER, Runtime
 from .source import fetch_attachment, fetch_dataset, validate_source
@@ -39,9 +40,10 @@ class ExampleDevice(Application):
     ui_cls = ExampleUI
     tags_cls = ExampleTags
 
-    def __init__(self, *, serialization_verified=False):
+    def __init__(self, *, context=None):
         super().__init__()
-        self.serialization_verified = serialization_verified
+        self.context = context
+        self.device_lock_held = False
         self.failure = None
 
     async def _handle_event(self, event, subscription_id=None):
@@ -89,7 +91,7 @@ class ExampleDevice(Application):
         self.tag_manager.log_mode = LogMode.NEVER
 
     async def _runtime(self):
-        # All invocations are globally serialized before framework initialization.
+        # The caller has claimed the best-effort device lease.
         # Read authoritative tags instead of trusting the event's older snapshot.
         from pydoover.api import NotFoundError
 
@@ -135,7 +137,7 @@ class ExampleDevice(Application):
             app_key=self.app_key,
             app_keys=[app.app_key for app in dataset.config.apps],
             repository=repository,
-            serialization_verified=self.serialization_verified,
+            device_lock_held=self.device_lock_held,
             attachment_loader=partial(fetch_attachment, repository, revision, slug),
         )
         runtime = Runtime(
@@ -212,16 +214,59 @@ class ExampleDevice(Application):
             self.failure = error
             raise
 
+    async def _with_device_lock(self, action, *, retry_on_collision=False):
+        # The lease outlives this invocation's hard deadline, including setup.
+        # Non-Lambda callers use AWS's maximum 15-minute execution limit.
+        remaining_ms = (
+            self.context.get_remaining_time_in_millis()
+            if self.context is not None
+            else 900_000
+        )
+        lease = DeviceLease(
+            self.api,
+            agent_id=self.agent_id,
+            app_key=self.app_key,
+            owner=uuid.uuid4().hex,
+            expires_at_ms=int(time.time() * 1000) + remaining_ms + 60_000,
+            clock=lambda: int(time.time() * 1000),
+        )
+        acquired = False
+        try:
+            acquired = await lease.acquire()
+            if not acquired:
+                if retry_on_collision:
+                    raise DeviceBusy("Device update in progress; retry this command")
+                return {"status": "collision"}
+            self.device_lock_held = True
+            return await action()
+        except Exception as error:
+            self.failure = error
+            raise
+        finally:
+            self.device_lock_held = False
+            if acquired:
+                try:
+                    await lease.release()
+                except Exception as error:
+                    self.failure = error
+                    raise
+
     async def on_deployment(self, event):
-        return await self._play()
+        return await self._with_device_lock(self._play)
 
     async def on_schedule(self, event):
-        return await self._play()
+        return await self._with_device_lock(self._play)
 
     async def on_aggregate_update(self, event):
-        return await self._play(presence_event=True)
+        return await self._with_device_lock(partial(self._play, presence_event=True))
 
     async def on_message_create(self, event):
+        return await self._with_device_lock(
+            partial(self._command, event),
+            retry_on_collision=True,
+        )
+
+    async def _command(self, event):
         try:
             if command_is_expired(event.message):
                 return {"status": "expired"}
@@ -256,8 +301,7 @@ class ExampleDevice(Application):
 
 
 def invoke(event, context):
-    verify_lambda_serialization(context)
-    app = ExampleDevice(serialization_verified=True)
+    app = ExampleDevice(context=context)
     result = run_app(app, event, context)
     # The framework logs handler failures. Re-raise here so infrastructure can
     # retry, while durable tags and the periodic schedule also permit recovery.

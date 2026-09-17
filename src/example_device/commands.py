@@ -129,7 +129,7 @@ def _response(status: str) -> dict[str, Any]:
 
 
 async def resume_pending_commands(runtime: Runtime, state: PlaybackState) -> None:
-    """Caller must already hold the transport's verified serialization context."""
+    """Caller must already hold the transport's local serialization context."""
     for key, progress in state.commands.items():
         if progress.pending is not None:
             await _finish_pending(runtime, state, key, progress)

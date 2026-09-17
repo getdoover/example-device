@@ -85,7 +85,7 @@ async def api_server():
                 app_key="processor",
                 app_keys=["meter"],
                 repository="sample/repo",
-                serialization_verified=True,
+                device_lock_held=True,
             )
             yield transport, stored, aggregates, requests
 
@@ -160,3 +160,38 @@ async def test_rpc_patch_uses_native_message_wrapper(api_server):
     await transport.update_rpc_response("ui_cmds", 123, {"status": {"code": "success"}})
     assert stored[("ui_cmds", 123)]["status"]["code"] == "success"
     assert requests[-1][3] == {"data": {"status": {"code": "success"}}}
+
+
+async def test_device_lease_uses_real_sdk_aggregate_requests(api_server):
+    from example_device.concurrency import DeviceLease
+
+    transport, _, aggregates, requests = api_server
+    first = DeviceLease(
+        transport.api,
+        agent_id=7,
+        app_key="processor",
+        owner="one",
+        expires_at_ms=2000,
+        clock=lambda: 1000,
+    )
+    second = DeviceLease(
+        transport.api,
+        agent_id=7,
+        app_key="processor",
+        owner="two",
+        expires_at_ms=2000,
+        clock=lambda: 1000,
+    )
+    assert await first.acquire()
+    assert not await second.acquire()
+    assert aggregates["tag_values"]["processor"]["collision_count"] == 1
+    await first.release()
+    assert await second.acquire()
+    await second.release()
+    own = aggregates["tag_values"]["processor"]
+    assert own == {"unrelated": 8, "collision_count": 1, "last_collision_ms": 1000}
+    assert all(
+        "log_update" not in query
+        for method, _, query, _ in requests
+        if method == "PATCH"
+    )

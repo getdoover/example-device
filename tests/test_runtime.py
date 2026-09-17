@@ -748,3 +748,32 @@ async def test_invocation_budget_yields_after_confirmed_attachment_batch(monkeyp
     assert transport.state["history"]["cursor"] == 19
     assert transport.state["history"]["recent_count"] == 5
     assert len(transport.messages) == 5
+
+
+async def test_stale_overlapping_checkpoint_replays_without_skipping_history():
+    dataset = make_dataset(history_count=170)
+    transport = FakeTransport()
+    first = make_runtime(transport, dataset, max_batches=1)
+    second = make_runtime(transport, dataset, max_batches=1)
+    # Both instances derive exactly the same IDs, including historical rows.
+    assert first._entry_ids == second._entry_ids
+    await first.run(ANCHOR)
+    stale_checkpoint = deepcopy(transport.state)
+    await second.run(ANCHOR)
+    confirmed_messages = deepcopy(transport.messages)
+    # Model the late write of an earlier reader after the faster run progressed.
+    transport.state = stale_checkpoint
+    for _ in range(10):
+        await make_runtime(transport, dataset, max_batches=1).run(ANCHOR)
+        if transport.state["history"]["cursor"] == transport.state["history"]["floor"]:
+            break
+    expected = {
+        (entry.channel, first._entry_ids[(entry.channel, entry.index)])
+        for entry in first.entries
+        if entry.kind == "message" and entry.timestamp <= 0
+    }
+    assert set(transport.messages) == expected
+    assert all(
+        transport.messages[key] == value for key, value in confirmed_messages.items()
+    )
+    assert transport.state["history"]["cursor"] == transport.state["history"]["floor"]
