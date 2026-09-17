@@ -46,9 +46,7 @@ class DooverTransport:
         attachment_loader: Callable[[AttachmentFile], Awaitable[bytes]] | None = None,
     ):
         if device_lock_held is not True:
-            raise ValueError(
-                "Claim the device lease before constructing the transport"
-            )
+            raise ValueError("Claim the device lease before constructing the transport")
         if app_key in app_keys:
             raise ValueError("Processor state namespace cannot also be a dataset app")
         self.api = api
