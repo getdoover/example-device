@@ -1,0 +1,164 @@
+[
+  {
+    "timestamp": 0,
+    "kind": "aggregate",
+    "mode": "merge",
+    "data": {
+      "state": {
+        "children": {
+          "schneider_vsd": {
+            "name": "schneider_vsd",
+            "type": "uiApplication",
+            "displayString": "$tag.app().app_display_name:string:Example VSD",
+            "hidden": false,
+            "position": 100,
+            "defaultOpen": true,
+            "children": {
+              "speed": {
+                "name": "speed",
+                "type": "uiVariable",
+                "displayString": "Speed",
+                "showActivity": true,
+                "position": 10,
+                "hidden": false,
+                "units": "Hz",
+                "varType": "float",
+                "currentValue": "$tag.app().vsd_frequency:number:null",
+                "decPrecision": 1
+              },
+              "motor_power": {
+                "name": "motor_power",
+                "type": "uiVariable",
+                "displayString": "Motor Power",
+                "showActivity": true,
+                "position": 20,
+                "hidden": false,
+                "units": "kW",
+                "varType": "float",
+                "currentValue": "$tag.app().vsd_power:number:null",
+                "decPrecision": 2
+              },
+              "thermal_load": {
+                "name": "thermal_load",
+                "type": "uiVariable",
+                "displayString": "Drive Thermal Load",
+                "showActivity": true,
+                "position": 30,
+                "hidden": false,
+                "units": "%",
+                "varType": "float",
+                "currentValue": "$tag.app().drive_thermal_load:number:null",
+                "decPrecision": 1
+              },
+              "mains_voltage": {
+                "name": "mains_voltage",
+                "type": "uiVariable",
+                "displayString": "Mains Voltage",
+                "showActivity": true,
+                "position": 40,
+                "hidden": false,
+                "units": "V",
+                "varType": "float",
+                "currentValue": "$tag.app().mains_voltage:number:null",
+                "decPrecision": 0
+              },
+              "total_hours": {
+                "name": "total_hours",
+                "type": "uiVariable",
+                "displayString": "Total Hours",
+                "showActivity": true,
+                "position": 50,
+                "hidden": false,
+                "units": "hrs",
+                "varType": "float",
+                "currentValue": "$tag.app().total_hours:number:null",
+                "decPrecision": 1
+              },
+              "motor_voltage": {
+                "name": "motor_voltage",
+                "type": "uiVariable",
+                "displayString": "Motor Output Voltage",
+                "showActivity": true,
+                "position": 60,
+                "hidden": false,
+                "units": "V",
+                "varType": "float",
+                "currentValue": "$tag.app().vsd_voltage:number:null",
+                "decPrecision": 1
+              },
+              "motor_current": {
+                "name": "motor_current",
+                "type": "uiVariable",
+                "displayString": "Motor Current",
+                "showActivity": true,
+                "position": 70,
+                "hidden": false,
+                "units": "A",
+                "varType": "float",
+                "currentValue": "$tag.app().vsd_current:number:null",
+                "decPrecision": 1
+              },
+              "energy": {
+                "name": "energy",
+                "type": "uiVariable",
+                "displayString": "Energy",
+                "showActivity": true,
+                "position": 80,
+                "hidden": false,
+                "units": "kWh",
+                "varType": "float",
+                "currentValue": "$tag.app().energy_kwh:number:null",
+                "decPrecision": 1
+              },
+              "flow_switch": {
+                "name": "flow_switch",
+                "type": "uiVariable",
+                "displayString": "Flow Switch",
+                "varType": "bool",
+                "currentValue": "$tag.app().flow_switch:boolean:false",
+                "showActivity": true,
+                "position": 90,
+                "hidden": false
+              },
+              "frequency_setpoint": {
+                "name": "frequency_setpoint",
+                "type": "uiSlider",
+                "displayString": "Frequency Setpoint",
+                "position": 100,
+                "hidden": false,
+                "units": "Hz",
+                "min": 0,
+                "max": 50,
+                "stepSize": 1,
+                "default": 35,
+                "dualSlider": false,
+                "isInverted": false,
+                "currentValue": "$cmds.app().frequency_setpoint::35"
+              },
+              "start": {
+                "name": "start",
+                "type": "uiButton",
+                "displayString": "Start",
+                "position": 110,
+                "hidden": "$tag.app().hide_start_button:boolean:false",
+                "colour": "blue",
+                "currentValue": "$cmds.app().start",
+                "requiresConfirm": false
+              },
+              "stop": {
+                "name": "stop",
+                "type": "uiButton",
+                "displayString": "Stop",
+                "position": 120,
+                "hidden": "$tag.app().hide_stop_button:boolean:false",
+                "colour": "red",
+                "currentValue": "$cmds.app().stop",
+                "requiresConfirm": false
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+]

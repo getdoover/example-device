@@ -6,6 +6,8 @@ import json
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
+from .model_playback import ModelEvent
+
 Phase = Literal["initializing", "importing", "active", "exhausted"]
 READY_HISTORY_MESSAGES = 50
 
@@ -38,11 +40,13 @@ class PendingCommand:
 class CommandProgress:
     last_request_id: int = 0
     pending: PendingCommand | None = None
+    effective_at_ms: int | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "last_request_id": str(self.last_request_id),
             "pending": self.pending.to_dict() if self.pending else None,
+            "effective_at_ms": self.effective_at_ms,
         }
 
 
@@ -96,6 +100,8 @@ class PlaybackState:
     last_observed: bool = False
     commands: dict[str, CommandProgress] = field(default_factory=dict)
     history: HistoryProgress | None = None
+    model_events: list[ModelEvent] = field(default_factory=list)
+    model_watermark_ms: int = 0
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -110,6 +116,10 @@ class PlaybackState:
             "last_observed": self.last_observed,
             "commands": {key: item.to_dict() for key, item in self.commands.items()},
             "history": self.history.to_dict() if self.history is not None else None,
+            "model_events_json": json.dumps(
+                [event.to_dict() for event in self.model_events], allow_nan=False
+            ),
+            "model_watermark_ms": self.model_watermark_ms,
         }
 
     @classmethod
@@ -170,7 +180,26 @@ class PlaybackState:
                 )
                 if pending.request_id <= last_request_id:
                     raise StateError("Pending command precedes completed command")
-            commands[key] = CommandProgress(last_request_id, pending)
+            effective = value.get("effective_at_ms")
+            commands[key] = CommandProgress(
+                last_request_id,
+                pending,
+                _integer(effective, "effective_at_ms")
+                if effective is not None
+                else None,
+            )
+        try:
+            events_raw = json.loads(raw.get("model_events_json", "[]"))
+            if not isinstance(events_raw, list):
+                raise ValueError("Model events must be an array")
+            events = [ModelEvent.from_dict(event) for event in events_raw]
+            if any(
+                left.request_id >= right.request_id or left.offset_ms > right.offset_ms
+                for left, right in zip(events, events[1:])
+            ):
+                raise ValueError("Model events must be ordered")
+        except (ValueError, TypeError) as error:
+            raise StateError("Invalid model command checkpoints") from error
         return cls(
             slug,
             revision,
@@ -182,6 +211,8 @@ class PlaybackState:
             observed,
             commands,
             history,
+            events,
+            _integer(raw.get("model_watermark_ms", 0), "model_watermark_ms", minimum=0),
         )
 
 

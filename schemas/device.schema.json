@@ -303,6 +303,52 @@
       "type": "integer",
       "minimum": 1735689600000,
       "description": "Exact anchor used to schedule this calendar-dependent dataset. Regenerate for a different installation date or timezone."
+    },
+    "model": {
+      "type": "object",
+      "description": "Optional approved model.py loaded from the same pinned dataset revision. Approval is enforced by processor code.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,127}$"
+        },
+        "app_key": {
+          "type": "string",
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,127}$"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "initial_state": {
+          "allOf": [
+            {
+              "type": "object"
+            },
+            {
+              "$ref": "#/$defs/jsonValue"
+            }
+          ]
+        },
+        "initial_commands": {
+          "allOf": [
+            {
+              "type": "object"
+            },
+            {
+              "$ref": "#/$defs/jsonValue"
+            }
+          ]
+        }
+      },
+      "required": [
+        "name",
+        "app_key",
+        "sha256",
+        "initial_state",
+        "initial_commands"
+      ],
+      "additionalProperties": false
     }
   },
   "required": [

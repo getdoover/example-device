@@ -7,9 +7,17 @@ import json
 import math
 import re
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path, PurePosixPath
 from typing import Any, Literal
+
+from .models import (
+    MAX_MODEL_BYTES,
+    TRUSTED_REPOSITORY,
+    LoadedModel,
+    ModelSpec,
+    load_model,
+)
 
 
 class DatasetError(ValueError):
@@ -112,12 +120,14 @@ class DatasetConfig:
     inputs: tuple[Input, ...] = ()
     processor: ProcessorConfig | None = None
     required_anchor_ms: int | None = None
+    model: ModelSpec | None = None
 
 
 @dataclass(frozen=True)
 class Dataset:
     config: DatasetConfig
     channels: dict[str, tuple[Entry, ...]]
+    model: LoadedModel | None = None
 
     @property
     def duration_ms(self) -> int:
@@ -348,7 +358,7 @@ def _config(raw: Any) -> DatasetConfig:
     _fields(
         raw,
         {"schema_version", "slug", "name", "apps", "channels", "duration_ms"},
-        {"interpolation", "inputs", "processor", "required_anchor_ms"},
+        {"interpolation", "inputs", "processor", "required_anchor_ms", "model"},
         "config",
     )
     if _integer(raw["schema_version"], "schema_version") != 1:
@@ -452,6 +462,28 @@ def _config(raw: Any) -> DatasetConfig:
         inputs.append(Input(app_key, method, value_type, minimum, maximum, choices))
     if len({(control.app_key, control.method) for control in inputs}) != len(inputs):
         _fail("inputs", "app_key and method pairs must be unique")
+    model = None
+    if "model" in raw:
+        value = _object(raw["model"], "model")
+        _fields(
+            value,
+            {"name", "app_key", "sha256", "initial_state", "initial_commands"},
+            set(),
+            "model",
+        )
+        model = ModelSpec(
+            _string(value["name"], "model.name", _KEY),
+            _string(value["app_key"], "model.app_key", _KEY),
+            _string(value["sha256"], "model.sha256", _SHA256),
+            deepcopy(_object(value["initial_state"], "model.initial_state")),
+            deepcopy(_object(value["initial_commands"], "model.initial_commands")),
+        )
+        _json(model.initial_state, "model.initial_state")
+        _json(model.initial_commands, "model.initial_commands")
+        if model.app_key not in keys or not {"tag_values", "ui_cmds"} <= set(channels):
+            _fail("model", "requires a declared app, tag_values and ui_cmds")
+        if any(rule.path[0] == model.app_key for rule in interpolation):
+            _fail("model", "model telemetry cannot also use interpolation")
     return DatasetConfig(
         1,
         _string(raw["slug"], "slug", _SLUG),
@@ -465,6 +497,7 @@ def _config(raw: Any) -> DatasetConfig:
         _integer(raw["required_anchor_ms"], "required_anchor_ms", 1735689600000)
         if "required_anchor_ms" in raw
         else None,
+        model,
     )
 
 
@@ -735,4 +768,14 @@ def load_directory(path: str | Path) -> Dataset:
                 if attachment not in checked:
                     read_local_attachment(directory, attachment)
                     checked.add(attachment)
+    if config.model is not None:
+        root = directory.resolve()
+        path = (root / "model.py").resolve()
+        if not path.is_relative_to(root):
+            _fail("model", "model symlink escapes its directory")
+        with path.open("rb") as stream:
+            raw = stream.read(MAX_MODEL_BYTES + 1)
+        result = replace(
+            result, model=load_model(TRUSTED_REPOSITORY, config.slug, config.model, raw)
+        )
     return result

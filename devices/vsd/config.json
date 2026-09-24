@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "slug": "vsd",
+  "name": "Example VSD",
+  "processor": {
+    "app_key": "example_device",
+    "application_name": "example_device"
+  },
+  "apps": [
+    {
+      "app_key": "schneider_vsd",
+      "application_name": "schneider_vsd",
+      "run": false,
+      "config": {
+        "vsd_type": "atv600",
+        "modbus_host": "127.0.0.1",
+        "modbus_port": 502,
+        "modbus_unit_id": 1,
+        "max_frequency_hz": 50,
+        "min_frequency_hz": 0,
+        "motor_rated_power_kw": 7.5,
+        "di_2_name": "Flow Switch",
+        "dv_app_position": 100
+      }
+    }
+  ],
+  "channels": [
+    "ui_state",
+    "tag_values",
+    "ui_cmds",
+    "deployment_config",
+    "ui_overrides"
+  ],
+  "duration_ms": 2592000000,
+  "inputs": [
+    {
+      "app_key": "schneider_vsd",
+      "method": "start",
+      "value_type": "integer"
+    },
+    {
+      "app_key": "schneider_vsd",
+      "method": "stop",
+      "value_type": "integer"
+    },
+    {
+      "app_key": "schneider_vsd",
+      "method": "frequency_setpoint",
+      "value_type": "number",
+      "min": 0,
+      "max": 50
+    }
+  ],
+  "model": {
+    "name": "vsd-v1",
+    "app_key": "schneider_vsd",
+    "sha256": "061cb37ef023a66f996819f31e32b6f86041550440285ee70e08fad60ba30061",
+    "initial_state": {
+      "speed_hz": 0.0,
+      "thermal_pct": 20.01919917999132,
+      "total_hours": 897.7594444444491,
+      "energy_kwh": 3579.3412352499827,
+      "elapsed_s": 7776000.0
+    },
+    "initial_commands": {
+      "running": false,
+      "frequency": 38
+    }
+  }
+}

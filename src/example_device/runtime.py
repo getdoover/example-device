@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Protocol, Sequence
 
 from .dataset import AttachmentFile, DataPath, Dataset, Entry
+from .model_playback import evaluate
 from .state import (
     READY_HISTORY_MESSAGES,
     HistoryProgress,
@@ -142,6 +143,10 @@ class Runtime:
                 "regenerate it for the requested installation date and timezone"
             )
         self.dataset = dataset
+        if dataset.config.model is not None and (
+            dataset.model is None or dataset.model.spec != dataset.config.model
+        ):
+            raise ValueError("Dataset Python model has not been verified and loaded")
         self.transport = transport
         self.anchor_ms = anchor_ms
         self.revision = revision
@@ -204,7 +209,22 @@ class Runtime:
         }
         if not state.commands.keys() <= input_keys:
             raise StateError("Stored commands are outside the pinned input contract")
+        if self.dataset.model:
+            for event in state.model_events:
+                self.dataset.model.validate(event.state, event.commands)
+                if event.offset_ms > self.dataset.duration_ms:
+                    raise StateError("Model command exceeds dataset duration")
+        elif state.model_events:
+            raise StateError("Model checkpoints require a model dataset")
         return state
+
+    def _model_patch(self, state: PlaybackState, offset: int) -> dict[str, Any]:
+        model = self.dataset.model
+        if model is None:
+            return {}
+        _, _, tags = evaluate(model, state.model_events, offset)
+        tags["time_last_update"] = self.anchor_ms + offset
+        return {model.spec.app_key: tags}
 
     def _base_write(self, entry: Entry) -> HistoryWrite:
         data = rebase_data(entry, self.anchor_ms, self.ids)
@@ -247,9 +267,11 @@ class Runtime:
             urls = await self._attachment_urls(target)
             set_data_path(data, reference.path, urls[reference.filename])
 
-    async def _write(self, entry: Entry) -> HistoryWrite:
+    async def _write(self, entry: Entry, state: PlaybackState) -> HistoryWrite:
         item = self._base_write(entry)
         await self._resolve_attachments(entry, item.data)
+        if entry.channel == "tag_values" and entry.timestamp >= 0:
+            item.data.update(self._model_patch(state, entry.timestamp))
         return item
 
     def _history_batch_end(self, start: int, eligible_end: int) -> int:
@@ -263,9 +285,13 @@ class Runtime:
                 return index + 1
         return end
 
-    async def _publish(self, entries: Sequence[Entry]) -> dict[int, bool]:
+    async def _publish(
+        self, entries: Sequence[Entry], state: PlaybackState
+    ) -> dict[int, bool]:
         writes = [
-            await self._write(entry) for entry in entries if entry.kind == "message"
+            await self._write(entry, state)
+            for entry in entries
+            if entry.kind == "message"
         ]
         results = await self.transport.publish_messages(writes) if writes else ()
         outcomes = {result.message_id: result.success for result in results}
@@ -309,7 +335,9 @@ class Runtime:
                 captures += bool(entry.attachments)
                 if messages == limit or captures == ATTACHMENT_MESSAGES_PER_BATCH:
                     break
-            outcomes = await self._publish([self.entries[index] for index in indices])
+            outcomes = await self._publish(
+                [self.entries[index] for index in indices], state
+            )
             published += sum(outcomes.values())
             for index in indices:
                 entry = self.entries[index]
@@ -361,6 +389,11 @@ class Runtime:
             if state.phase != "initializing" and on_progress is not None:
                 await on_progress(state, eligible_end)
             await resume_pending_commands(self, state)
+            if self.dataset.model:
+                # Reserve time before any publication attempt. A delayed command
+                # cannot change a sample whose write may already have succeeded.
+                state.model_watermark_ms = max(state.model_watermark_ms, offset)
+                await checkpoint(state)
             interval = self.active_interval_ms if observed else self.idle_interval_ms
             newly_observed = observed and not state.last_observed
             observation_changed = observed != state.last_observed
@@ -372,7 +405,7 @@ class Runtime:
                     if entry.kind == "aggregate" or (
                         entry.timestamp == 0 and entry.apply_to_aggregate
                     ):
-                        await self._apply_aggregate_entry(entry)
+                        await self._apply_aggregate_entry(entry, state)
                 state.phase = "importing"
                 state.aggregate_cursor = bisect_right(self.offsets, 0)
                 await checkpoint(state)
@@ -426,7 +459,7 @@ class Runtime:
                     return RunResult(state.phase, state.cursor, published, True, now_ms)
                 batch_end = self._history_batch_end(state.cursor, eligible_end)
                 entries = self.entries[state.cursor : batch_end]
-                outcomes = await self._publish(entries)
+                outcomes = await self._publish(entries, state)
                 batches_remaining -= 1
                 published += sum(outcomes.values())
                 start = state.cursor
@@ -457,7 +490,7 @@ class Runtime:
                 aggregate_end = min(state.aggregate_cursor + 50, eligible_end)
                 for entry in self.entries[state.aggregate_cursor : aggregate_end]:
                     if entry.kind == "aggregate" or entry.apply_to_aggregate:
-                        await self._apply_aggregate_entry(entry)
+                        await self._apply_aggregate_entry(entry, state)
                 state.aggregate_cursor = aggregate_end
                 await checkpoint(state)
             if state.aggregate_cursor < eligible_end:
@@ -473,6 +506,24 @@ class Runtime:
                 patch = self._interpolated_patch(aggregates.get("tag_values", {}))
                 if patch:
                     await self.transport.patch_aggregate("tag_values", patch)
+            if self.dataset.model:
+                await self.transport.patch_aggregate(
+                    "tag_values", self._model_patch(state, offset)
+                )
+                # All forward samples and aggregates through offset are confirmed.
+                # Keep the last checkpoint at the final sample time for retries,
+                # plus newer commands needed by the next sample.
+                floor = min(
+                    self.offsets[state.cursor - 1],
+                    self.offsets[state.aggregate_cursor - 1],
+                )
+                earlier = [
+                    i
+                    for i, event in enumerate(state.model_events)
+                    if event.offset_ms <= floor
+                ]
+                if earlier:
+                    state.model_events = state.model_events[earlier[-1] :]
             state.last_publication_ms = now_ms
             if state.phase != "importing":
                 state.phase = ready_phase
@@ -480,11 +531,13 @@ class Runtime:
             next_due = None if ready_phase == "exhausted" else now_ms + interval
             return await backfill(published, next_due)
 
-    async def _apply_aggregate_entry(self, entry: Entry) -> None:
+    async def _apply_aggregate_entry(self, entry: Entry, state: PlaybackState) -> None:
         data = rebase_data(entry, self.anchor_ms, self.ids)
         await self._resolve_attachments(entry, data)
         for key in reversed(entry.scope):
             data = {key: data}
+        if entry.channel == "tag_values" and entry.timestamp >= 0:
+            data.update(self._model_patch(state, entry.timestamp))
         replace = (".".join(entry.scope),) if entry.mode == "replace" else ()
         await self.transport.patch_aggregate(entry.channel, data, replace)
 

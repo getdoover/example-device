@@ -4,6 +4,8 @@ Datasets and a Doover processor that imports example-device history and publishe
 
 The [camera-device example](devices/camera-device/README.md) contains a Blender reconstruction of a Queen Victoria Building gallery and 3,552 compressed snapshots. Four pan-tilt views repeat hourly across seven days of history and 30 days after installation, with changing people and lighting. Playback publishes native camera attachments; a live stream remains separate work.
 
+The [VSD example](devices/vsd/README.md) contains 90 days of pump-drive history and 30 future days. Start, Stop, and frequency commands control a Python model downloaded from the pinned GitHub commit. The processor verifies the model against its own approved source hashes before execution.
+
 ## How it works
 
 Organisation provisioning creates the device and installs the processor and display apps. Only the processor runs. Provisioning supplies the repository, dataset slug, full commit SHA, and `anchor_ms`: the intended midnight zero. Generic examples use the organisation creation day in its timezone. Calendar-dependent examples declare `required_anchor_ms`; provisioning must use that value or regenerate the dataset for the intended date and timezone. Device creation and app installation are handled outside this repository.
@@ -16,7 +18,7 @@ A one-minute schedule checks for work. Live playback takes priority over backgro
 
 Successful playback checks refresh the device's `doover_connection` heartbeat, even when no telemetry is due. Doover shows the example as online and marks it offline after five minutes without a heartbeat. This reflects processor availability; exhausted telemetry remains a separate playback state.
 
-Historical input events and their effects are precomputed. Live inputs update selected values, acknowledgements, and input logs without changing telemetry. Imported RPCs cannot execute as live commands. At the dataset's end, live publication stops and the device shows `exhausted`; remaining older history still imports and inputs can still be acknowledged.
+Historical input events and their effects are precomputed. For datasets without a model, live inputs update selected values, acknowledgements, and input logs without changing telemetry. Model datasets also save command checkpoints and calculate subsequent telemetry from those commands. Imported RPCs cannot execute as live commands. At the dataset's end, live publication stops and the device shows `exhausted`; remaining older history still imports. Model controls reject new commands after exhaustion; other inputs can still be acknowledged.
 
 ## Data layout
 
@@ -55,6 +57,9 @@ uv run example-device validate devices/camera-device
 uv run python tools/generate_camera_device.py
 uv run python tools/generate_vehicle_tracker.py
 uv run example-device validate devices/vehicle-tracker
+uv run python tools/generate_vsd.py
+uv run example-device validate devices/vsd
+uv run python tools/simulate_vsd.py
 uv run pytest -q
 ```
 

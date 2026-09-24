@@ -1,4 +1,4 @@
-"""Acknowledge declared example controls without changing telemetry."""
+"""Acknowledge controls and persist optional model effects before publication."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from .dataset import Input
+from .model_playback import ModelEvent, evaluate
 from .state import CommandProgress, PendingCommand, PlaybackState
 
 if TYPE_CHECKING:
@@ -80,6 +81,8 @@ async def acknowledge(runtime: Runtime, request: CommandRequest) -> CommandResul
         if state.phase not in ("active", "exhausted"):
             raise CommandError("The example is still preparing its history")
         await resume_pending_commands(runtime, state)
+        model = runtime.dataset.model
+        affects_model = model is not None and request.app_key == model.spec.app_key
         key = f"{request.app_key}.{request.method}"
         progress = state.commands.setdefault(key, CommandProgress())
         if request.message_id <= progress.last_request_id:
@@ -91,9 +94,52 @@ async def acknowledge(runtime: Runtime, request: CommandRequest) -> CommandResul
                 else "superseded"
             )
             await runtime.transport.update_rpc_response(
-                "ui_cmds", request.message_id, _response(status)
+                "ui_cmds",
+                request.message_id,
+                _response(
+                    status,
+                    telemetry_changed=status == "acknowledged"
+                    and progress.effective_at_ms is not None,
+                    effective_at_ms=progress.effective_at_ms
+                    if status == "acknowledged"
+                    else None,
+                ),
             )
             return CommandResult(status, request.message_id)
+
+        if affects_model:
+            if (
+                state.model_events
+                and request.message_id <= state.model_events[-1].request_id
+            ):
+                await runtime.transport.update_rpc_response(
+                    "ui_cmds", request.message_id, _response("superseded")
+                )
+                return CommandResult("superseded", request.message_id)
+            if (
+                state.phase == "exhausted"
+                or request.timestamp_ms
+                >= runtime.anchor_ms + runtime.dataset.duration_ms
+            ):
+                raise CommandError(
+                    "The example model has reached the end of its timeline"
+                )
+            # Check model-specific semantics before creating a durable pending RPC.
+            controls = (
+                state.model_events[-1].commands
+                if state.model_events
+                else model.spec.initial_commands
+            )
+            try:
+                model.command(
+                    model.spec.initial_state, controls, request.method, request.value
+                )
+            except ValueError as error:
+                raise CommandError(str(error)) from error
+            if state.model_watermark_ms + 1 >= runtime.dataset.duration_ms:
+                raise CommandError(
+                    "The example model has reached the end of its timeline"
+                )
 
         log_id = stable_message_id(
             request.timestamp_ms,
@@ -117,13 +163,20 @@ async def acknowledge(runtime: Runtime, request: CommandRequest) -> CommandResul
         return CommandResult("acknowledged", request.message_id)
 
 
-def _response(status: str) -> dict[str, Any]:
+def _response(
+    status: str, *, telemetry_changed=False, effective_at_ms=None
+) -> dict[str, Any]:
     return {
         "status": {"code": "success"},
         "response": {
             "status": status,
             "example_device": True,
-            "telemetry_changed": False,
+            "telemetry_changed": telemetry_changed,
+            **(
+                {"effective_at_ms": effective_at_ms}
+                if effective_at_ms is not None
+                else {}
+            ),
         },
     }
 
@@ -148,6 +201,30 @@ async def _finish_pending(
         for item in runtime.dataset.config.inputs
         if f"{item.app_key}.{item.method}" == key
     )
+    model = runtime.dataset.model
+    model_event = None
+    if model is not None and control.app_key == model.spec.app_key:
+        model_event = next(
+            (
+                event
+                for event in state.model_events
+                if event.request_id == pending.request_id
+            ),
+            None,
+        )
+        if model_event is None:
+            offset = max(
+                pending.timestamp_ms - runtime.anchor_ms, state.model_watermark_ms + 1
+            )
+            model_state, controls, _ = evaluate(model, state.model_events, offset)
+            controls = model.command(
+                model_state, controls, control.method, pending.value
+            )
+            model_event = ModelEvent(pending.request_id, offset, model_state, controls)
+            state.model_events.append(model_event)
+            state.model_watermark_ms = offset
+            # Persist both the effective time and state before telemetry or logs.
+            await runtime.transport.write_state(state.to_dict())
     await runtime.transport.patch_aggregate(
         "ui_cmds", {control.app_key: {control.method: pending.value}}
     )
@@ -166,16 +243,48 @@ async def _finish_pending(
             },
         },
     )
-    results = await runtime.transport.publish_messages([log])
+    writes = [log]
+    if model_event is not None:
+        from .runtime import stable_message_id
+
+        effective_ms = runtime.anchor_ms + model_event.offset_ms
+        telemetry = runtime._model_patch(state, model_event.offset_ms)
+        telemetry[IMPORT_MARKER] = {
+            "origin": "command_telemetry",
+            "request_id": str(pending.request_id),
+        }
+        telemetry_id = stable_message_id(
+            effective_ms,
+            f"{runtime.installation_id}|{runtime.revision}|command-telemetry|{pending.request_id}",
+            {pending.request_id, pending.log_id, *runtime._entry_ids.values()},
+        )
+        writes.append(HistoryWrite("tag_values", telemetry_id, effective_ms, telemetry))
+    results = await runtime.transport.publish_messages(writes)
     if (
-        len(results) != 1
-        or results[0].message_id != pending.log_id
-        or not results[0].success
+        len(results) != len(writes)
+        or {result.message_id for result in results}
+        != {write.message_id for write in writes}
+        or not all(result.success for result in results)
     ):
         raise RuntimeError("Command input log was not confirmed")
+    if model_event is not None:
+        await runtime.transport.patch_aggregate(
+            "tag_values", runtime._model_patch(state, model_event.offset_ms)
+        )
     await runtime.transport.update_rpc_response(
-        "ui_cmds", pending.request_id, _response("acknowledged")
+        "ui_cmds",
+        pending.request_id,
+        _response(
+            "acknowledged",
+            telemetry_changed=model_event is not None,
+            effective_at_ms=runtime.anchor_ms + model_event.offset_ms
+            if model_event
+            else None,
+        ),
     )
     progress.last_request_id = pending.request_id
     progress.pending = None
+    if model_event is not None:
+        progress.effective_at_ms = runtime.anchor_ms + model_event.offset_ms
+        state.last_publication_ms = None  # The next minute tick observes the ramp.
     await runtime.transport.write_state(state.to_dict())
