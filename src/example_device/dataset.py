@@ -358,7 +358,7 @@ def _config(raw: Any) -> DatasetConfig:
     _fields(
         raw,
         {"schema_version", "slug", "name", "apps", "channels", "duration_ms"},
-        {"interpolation", "inputs", "processor", "required_anchor_ms", "model"},
+        {"interpolation", "inputs", "processor", "required_anchor_ms"},
         "config",
     )
     if _integer(raw["schema_version"], "schema_version") != 1:
@@ -463,17 +463,25 @@ def _config(raw: Any) -> DatasetConfig:
     if len({(control.app_key, control.method) for control in inputs}) != len(inputs):
         _fail("inputs", "app_key and method pairs must be unique")
     model = None
-    if "model" in raw:
-        value = _object(raw["model"], "model")
+    model_entries = [
+        (app.app_key, app.config["example_model"])
+        for app in apps
+        if "example_model" in app.config
+    ]
+    if len(model_entries) > 1:
+        _fail("example_model", "only one app may declare a Python model")
+    if model_entries:
+        app_key, declaration = model_entries[0]
+        value = _object(declaration, "example_model")
         _fields(
             value,
-            {"name", "app_key", "sha256", "initial_state", "initial_commands"},
+            {"name", "sha256", "initial_state", "initial_commands"},
             set(),
             "model",
         )
         model = ModelSpec(
             _string(value["name"], "model.name", _KEY),
-            _string(value["app_key"], "model.app_key", _KEY),
+            app_key,
             _string(value["sha256"], "model.sha256", _SHA256),
             deepcopy(_object(value["initial_state"], "model.initial_state")),
             deepcopy(_object(value["initial_commands"], "model.initial_commands")),

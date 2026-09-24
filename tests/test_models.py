@@ -65,6 +65,25 @@ def test_dataset_history_and_schema(dataset):
         (DIRECTORY.parents[1] / "schemas/device.schema.json").read_text()
     )
     Draft202012Validator(schema).validate(config)
+    assert "model" not in config
+    assert (
+        config["apps"][0]["config"]["example_model"]["sha256"]
+        == dataset.model.spec.sha256
+    )
+    # Existing organisation installers accept these top-level fields and arbitrary
+    # JSON app configuration. Keep the model declaration inside that contract.
+    assert set(config) <= {
+        "schema_version",
+        "slug",
+        "name",
+        "processor",
+        "apps",
+        "channels",
+        "duration_ms",
+        "inputs",
+        "interpolation",
+        "required_anchor_ms",
+    }
     samples = [row for row in dataset.channels["tag_values"] if row.kind == "message"]
     assert samples[0].timestamp == -90 * DAY
     assert samples[-1].timestamp == 30 * DAY

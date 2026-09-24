@@ -215,13 +215,12 @@ def generate(output):
                 "max": 50,
             },
         ],
-        "model": {
-            "name": spec.name,
-            "app_key": APP,
-            "sha256": spec.sha256,
-            "initial_state": baseline_state,
-            "initial_commands": baseline_commands,
-        },
+    }
+    config["apps"][0]["config"]["example_model"] = {
+        "name": spec.name,
+        "sha256": spec.sha256,
+        "initial_state": baseline_state,
+        "initial_commands": baseline_commands,
     }
     logs.append(
         aggregate(

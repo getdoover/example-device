@@ -54,6 +54,8 @@ examples without a model retain their acknowledgement-only behaviour.
 ## Python model trust
 
 The processor downloads `model.py` from the same full Git commit as the dataset.
+The display app declares it in `config.example_model`, so existing organisation
+installers can still validate the dataset manifest without a schema upgrade.
 It permits executable models only from `getdoover/example-device`. It compares
 the dataset's model name and SHA-256 with the processor-owned allowlist in
 `src/example_device/models.py`, then checks the downloaded bytes before compiling
