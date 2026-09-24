@@ -1,0 +1,37 @@
+[
+  {
+    "timestamp": 0,
+    "kind": "aggregate",
+    "mode": "merge",
+    "data": {
+      "applications": {
+        "schneider_vsd": {
+          "vsd_type": "atv600",
+          "modbus_host": "127.0.0.1",
+          "modbus_port": 502,
+          "modbus_unit_id": 1,
+          "max_frequency_hz": 50,
+          "min_frequency_hz": 0,
+          "motor_rated_power_kw": 7.5,
+          "di_2_name": "Flow Switch",
+          "dv_app_position": 100,
+          "example_model": {
+            "name": "vsd-v1",
+            "sha256": "061cb37ef023a66f996819f31e32b6f86041550440285ee70e08fad60ba30061",
+            "initial_state": {
+              "speed_hz": 0.0,
+              "thermal_pct": 20.01919917999132,
+              "total_hours": 897.7594444444491,
+              "energy_kwh": 3579.3412352499827,
+              "elapsed_s": 7776000.0
+            },
+            "initial_commands": {
+              "running": false,
+              "frequency": 38
+            }
+          }
+        }
+      }
+    }
+  }
+]

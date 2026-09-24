@@ -32,6 +32,13 @@
               },
               {
                 "$ref": "#/$defs/jsonValue"
+              },
+              {
+                "properties": {
+                  "example_model": {
+                    "$ref": "#/$defs/exampleModel"
+                  }
+                }
               }
             ]
           },
@@ -373,6 +380,47 @@
           }
         }
       ]
+    },
+    "exampleModel": {
+      "type": "object",
+      "description": "Optional approved model.py loaded from the same pinned dataset revision. Approval is enforced by processor code.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,127}$"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "initial_state": {
+          "allOf": [
+            {
+              "type": "object"
+            },
+            {
+              "$ref": "#/$defs/jsonValue"
+            }
+          ]
+        },
+        "initial_commands": {
+          "allOf": [
+            {
+              "type": "object"
+            },
+            {
+              "$ref": "#/$defs/jsonValue"
+            }
+          ]
+        }
+      },
+      "required": [
+        "name",
+        "sha256",
+        "initial_state",
+        "initial_commands"
+      ],
+      "additionalProperties": false
     }
   }
 }

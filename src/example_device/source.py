@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import json
 import re
+from dataclasses import replace
 from typing import Any
 
 import aiohttp
 
 from .dataset import AttachmentFile, Dataset, parse_dataset, verify_attachment_bytes
+from .models import MAX_MODEL_BYTES, load_model, require_approved
 
 _REPOSITORY = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\Z")
 _COMPONENT = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]*\Z")
@@ -53,7 +55,7 @@ async def fetch_dataset(repository: str, revision: str, slug: str) -> Dataset:
     timeout = aiohttp.ClientTimeout(total=30)
     async with aiohttp.ClientSession(timeout=timeout, trust_env=False) as session:
 
-        async def read(path):
+        async def read(path, *, binary=False):
             nonlocal total
             async with session.get(f"{base}/{path}", allow_redirects=False) as response:
                 if response.status != 200:
@@ -65,10 +67,12 @@ async def fetch_dataset(repository: str, revision: str, slug: str) -> Dataset:
                 async for block in response.content.iter_chunked(64 * 1024):
                     size += len(block)
                     total += len(block)
-                    if size > MAX_FILE_BYTES or total > MAX_DATASET_BYTES:
+                    limit = MAX_MODEL_BYTES if binary else MAX_FILE_BYTES
+                    if size > limit or total > MAX_DATASET_BYTES:
                         raise ValueError("Dataset exceeds the download size limit")
                     parts.append(block)
-                return decode_json(b"".join(parts))
+                raw = b"".join(parts)
+                return raw if binary else decode_json(raw)
 
         config = await read("config.json")
         names = config.get("channels") if isinstance(config, dict) else None
@@ -84,9 +88,15 @@ async def fetch_dataset(repository: str, revision: str, slug: str) -> Dataset:
         channels = {}
         for name in names:
             channels[name] = await read(f"channels/{name}.json")
-    result = parse_dataset(config, channels)
-    if result.config.slug != slug:
-        raise ValueError("Dataset slug does not match its requested directory")
+        result = parse_dataset(config, channels)
+        if result.config.slug != slug:
+            raise ValueError("Dataset slug does not match its requested directory")
+        if result.config.model is not None:
+            require_approved(repository, slug, result.config.model)
+            raw = await read("model.py", binary=True)
+            result = replace(
+                result, model=load_model(repository, slug, result.config.model, raw)
+            )
     return result
 
 

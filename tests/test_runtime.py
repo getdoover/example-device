@@ -351,11 +351,12 @@ async def test_upgrade_an_ascending_import_keeps_confirmed_rows_and_reverses_the
     runtime = make_runtime(transport, dataset)
     # Reproduce the durable state left by the previous runtime after 50 rows.
     async with transport.serialized():
+        old_state = await runtime._read_state()
         for entry in runtime.entries:
             if entry.timestamp == 0:
-                await runtime._apply_aggregate_entry(entry)
+                await runtime._apply_aggregate_entry(entry, old_state)
         await transport.publish_messages(
-            [await runtime._write(entry) for entry in runtime.entries[:50]]
+            [await runtime._write(entry, old_state) for entry in runtime.entries[:50]]
         )
         await transport.write_state(
             PlaybackState(

@@ -65,7 +65,7 @@ def manifest() -> dict:
             "type": "PRO",
             "visibility": "PUB",
             "allow_many": False,
-            "description": "Publishes precomputed example telemetry and acknowledges demo controls.",
+            "description": "Publishes example telemetry and applies demo controls to approved Python models.",
             "depends_on": [],
             "export_config_command": "export-config",
             "export_ui_command": "export-config",
